@@ -1,0 +1,10 @@
+// ============================================================================
+// org.eclipse.cdt.visualizer.core -- CDT Visualizer Core plugin
+// ============================================================================
+
+This plugin project defines the UI components of the CDT Visualizer feature.
+
+For an overview of the Visualizer feature, see the following file:
+
+  /org.eclipse.cdt.visualizer-feature/ABOUT.txt.
+

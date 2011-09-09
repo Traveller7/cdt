@@ -1,0 +1,198 @@
+Visualizer View Framework
+=========================
+Version: 1.0.alpha
+Last updated: 8/26/11
+
+Overview
+--------
+
+- The Visualizer framework supports the addition of visual (i.e. graphical)
+  representations of run/debug launches to the Eclipse workbench.
+
+- The Visualizer software bundle consists of:
+  - org.eclipse.cdt.visualizer-feature, which includes:
+    - org.eclipse.cdt.visualizer.core -- non-UI interface and utility classes
+    - org.eclipse.cdt.visualizer.ui   -- UI classes
+
+- The Visualizer feature is an optional feature of CDT.
+  It provides interfaces and default implementations to be used by
+  integrators in adding their own graphical views to Eclipse.
+
+- The Visualizer framework has the following goals:
+  - make it easy to present multiple graphical presentations of
+    a running/debugging launch, and allow the user to select between them
+  - provide a pluggable infrastructure that does not limit an integrator
+    to a specific model, event, or graphic "canvas" in creating such presentations
+  - provide sufficient default implementations to make creating a new
+    custom presentation as simple as possible
+
+- The framework consists of the following set of interfaces and classes:
+
+      ==========================
+      | VisualizerView         |
+      ==========================
+      | (VisualizerViewer)     |
+      | -------------------    |
+      | |                 |    |
+      | |  IVisualizer's  |  <===  IVisualizer  ===>  (Model Object)
+      | |     graphic     |    |
+      | |     control     |    |
+      | |                 |    |
+      | -------------------    |
+      ==========================  
+
+  - a top-level VisualizerView which contains and presents
+      a default IVisualizerViewer
+      The VisualizerView also provides support for a toolbar and
+      context menu, which can be populated by IVisualizers when
+      they are selected.
+
+  - an IVisualizerViewer container control, which manages one or more
+     IVisualizers and their corresponding graphic controls,
+     and automatically switches between them based on the current
+     workbench selection.
+     The viewer also mediates between its parent View and child IVisualizers
+     on things like:
+       - selection (workbench selection and IVisulizer selection)
+       - toolbar population and updating
+       - context menu events and updating
+
+  - an IVisualizer type, which encapsulates:
+    - a graphic representation of one or more object types
+    - a top-level graphic display control (e.g. an SWT canvas, GEF canvas, etc.)
+      that is used to present this graphic representation
+
+  - a "model" class -- this is not a specific class type, it's basically
+    any top-level Object that can be selected and can be used to
+    obtain the state to be presented by an IVisualizer
+
+- The framework provides default implementations of the VisualizerView,
+  IVisualizerViewer, and IVisualizer types
+
+- The framework provides an extension point by which IVisualizer implementations
+  can be registered -- this is read by the default IVisualizerViewer,
+  and used to populate its initial set of IVisualizer views
+
+- The framework also provides useful base classes to support the creation
+  of IVisualizer implementations
+
+
+Current State, Future Plans
+---------------------------
+
+- In the initial implementation, the IVisualizer implementation 
+  is required to use the selection to locate the object (i.e. the current launch)
+  that it is to represent visually, and to construct and maintain
+  a graphic representation of it.
+
+- In future, the Visualizer framework will want to provide APIs
+  that factor out and simplify common aspects of interaction with
+  launches and launch targets. For example:
+
+  - a service-based target introspection layer, which can be used by
+      IPresentation implementations to discover details of the current
+      launch target in a platform-neutral way
+
+        
+Extension Points:
+-----------------
+
+The base class VisualizerViewer checks the following extension point
+for plugin contributions of IVisualizer implementations:
+
+- org.eclipse.cdt.visualizer.ui.vizualizer
+  - id:    unique ID of this visualizer type
+  - class: implementation of IVisualizer interface
+
+  Examples:
+
+   <!-- Visualizer declarations -->
+
+   <extension
+         point="org.eclipse.cdt.visualizer.ui.visualizer">
+         
+      <!-- "Grid View" visualizer -->
+      <visualizer
+            id="com.tilera.ide.views.grid.visualizer"
+            class="com.tilera.ide.views.grid.GridViewVisualizer">
+      </visualizer>
+
+      <!-- "Test Canvas" visualizer -->
+      <visualizer
+            id="org.eclipse.cdt.visualizer.ui.test.TestCanvasVisualizer"
+            class="org.eclipse.cdt.visualizer.ui.test.TestCanvasVisualizer">
+      </visualizer>
+
+   </extension>
+
+
+"As Built" Class hierarchy:
+---------------------------
+
+- product: com.tilera.ide.product
+  - references feature: org.eclipse.cdt.visualizer
+
+- feature: cdt_7_0_2/features/org.eclipse.cdt.visualizer
+  - includes:
+
+    - plugin: cdt_7_0_2/plugins/org.eclipse.cdt.visualizer.core
+
+      - org.eclipse.cdt.visualizer.core.plugin
+        - CDTVisualizerCorePlugin -- plugin activator class (mainly used to access ResourceManager)
+
+      - org.eclipse.cdt.visualizer.core
+        - ResourceManager  -- resource manager, handles strings only (see UIResourceManager below)
+        - Extension        -- helper class for dealing with extension points
+        - ExtensionElement -- helper class for dealing with extension definitions
+
+    - plugin: cdt_7_0_2/plugins/org.eclipse.cdt.visualizer.ui
+      - org.eclipse.cdt.visualizer.ui.plugin
+        - CDTVisualizerUIPlugin -- plugin activator class (mainly used for logging and UIResourceManager)
+
+      - org.eclipse.cdt.visualizer.ui
+        - VisualizerView    -- base class for top-level Visualizer "view" in Eclipse workbench
+	    - handles:
+	      - display of single IVisualizerViewer
+	      - any Eclipse view-related boilerplate code
+        - IVisualizerViewer -- visualizer "viewer" or selector interface
+        - VisualizerViewer  -- base class for IVisualizerViewer implementations
+	    - handles:
+	      - loading and managing a list of IVisualizers
+	      - routing of selection
+		- from workbench into current IVisualizer
+		- from current IVisualizer back to workbench
+	      - manages viewer toolbar and content menu,
+		asks current IVisualizer to populate these as needed
+        - VisualizerAction  -- base class for toolbar/menu actions (convenience wrapper for Action class)
+        - IVisualizer       -- interface for visualizer (graphic representation, like Grid View)
+	    - handles:
+	      - creating and painting a graphic component
+	      - management of selection for that component
+	      - populating toolbar and context menu content on demand
+        - Visualizer        -- base class for IVisualizer implementations
+
+      - org.eclipse.cdt.visualizer.ui.events
+        - VisualizerViewerEvent -- event raised by VisualizerViewer (visualizer changed, context menu event)
+        - IVisualizerViewerListener -- listener interface for VisualizerViewerEvent listeners
+
+      - org.eclipse.cdt.visualizer.ui.canvas
+        - GraphicCanvasVisualizer -- base class for visualizers based on GraphicCanvas component
+        - GraphicCanvas     -- simple canvas that paints a list of GraphicObjects
+        - IGraphicObject    -- interface for objects to be drawn on GraphicCanvas
+        - GraphicObject     -- base class implementation of IGraphicObject
+        - BufferedCanvas    -- base class for GraphicCanvas (or any canvas component with back-buffering)
+
+      - org.eclipse.cdt.visualizer.ui.test
+        - TestCanvasVisualizer -- IVisualizer wrapper for TestCanvas
+        - TestCanvas -- simple canvas example that displays current selection as text
+
+      - org.eclipse.cdt.visualizer.ui.util
+        - UIResourceManager -- resource manager, includes strings, images, fonts, colors
+        - Event -- event base class
+        - ListenerList -- listener manager class
+        - SelectionManager -- ISelectionProvider implementation, manages selection for a containing class
+        - SelectionProviderAdapter -- ISelectionProvider wrapper for classes that don't implement it
+        - SelectionUtils -- ISelection manipulation utilities
+        - WorkbenchSelectionAdapter -- manages interaction between workbench selection and a specified IViewPart
+
+        
