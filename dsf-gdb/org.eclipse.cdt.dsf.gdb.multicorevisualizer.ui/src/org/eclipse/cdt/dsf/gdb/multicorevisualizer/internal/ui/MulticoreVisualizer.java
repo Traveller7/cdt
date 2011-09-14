@@ -12,17 +12,17 @@ package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui;
 
 import java.util.concurrent.RejectedExecutionException;
 
+import org.eclipse.cdt.dsf.concurrent.CountingRequestMonitor;
 import org.eclipse.cdt.dsf.concurrent.DataRequestMonitor;
 import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
 import org.eclipse.cdt.dsf.concurrent.ImmediateExecutor;
 import org.eclipse.cdt.dsf.datamodel.DMContexts;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
 import org.eclipse.cdt.dsf.debug.service.IProcesses;
-import org.eclipse.cdt.dsf.debug.service.IProcesses.IProcessDMContext;
-import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMData;
+import org.eclipse.cdt.dsf.debug.service.IRunControl.IContainerDMContext;
+import org.eclipse.cdt.dsf.debug.service.IRunControl.IExecutionDMContext;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.ISuspendedDMEvent;
 import org.eclipse.cdt.dsf.debug.service.command.ICommandControlService.ICommandControlDMContext;
-import org.eclipse.cdt.dsf.gdb.service.IGDBProcesses.IGdbThreadDMData;
 import org.eclipse.cdt.dsf.service.DsfServiceEventHandler;
 import org.eclipse.cdt.dsf.service.DsfServicesTracker;
 import org.eclipse.cdt.dsf.service.DsfSession;
@@ -143,85 +143,70 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 							public void run() {
 								final IProcesses procService = getService(IProcesses.class);
 								if (procService != null) {
-									procService.getRunningProcesses(
-											ctx, new DataRequestMonitor<IProcessDMContext[]>(ImmediateExecutor.getInstance(), null) {
+									final StringBuffer text = new StringBuffer();
+									
+									final CountingRequestMonitor crm = new CountingRequestMonitor(ImmediateExecutor.getInstance(), null) {
+										@Override
+										protected void handleCompleted() {
+    										asyncExec(new Runnable() {
+    											public void run() {
+    												m_canvas.setText(text.toString());
+    												m_canvas.redraw();
+    											}});
+										}
+									};
+									
+									procService.getProcessesBeingDebugged(
+											ctx, new DataRequestMonitor<IDMContext[]>(ImmediateExecutor.getInstance(), null) {
 												@Override
 												protected void handleCompleted() {
-													final StringBuffer text = new StringBuffer();
+													IDMContext[] procs = getData();
 													
-				    								if (getData().length > 0 && getData()[0] instanceof IThreadDMData) {
-				    									// The list of running processes also contains the name of the processes
-				    									// This is much more efficient.  Let's use it.
-														for (IProcessDMContext processCtx : getData()) {
+													if (!isSuccess() || procs == null || procs.length < 1) {
+			    										text.append("No processes being debugged\n");
+			    										crm.setDoneCount(0);
+			    										return;
+													}
+													
+													// For each process, look for its threads
+													crm.setDoneCount(procs.length);
+													
+													for (IDMContext dmc : procs) {
+														IContainerDMContext container = (IContainerDMContext)dmc;
+														text.append(container.toString()+"\n");
 
-															IThreadDMData processData = (IThreadDMData) processCtx;
+														procService.getProcessesBeingDebugged(
+																container,
+																new DataRequestMonitor<IDMContext[]>(ImmediateExecutor.getInstance(), crm) {
+																	@Override
+																	protected void handleCompleted() {
+																		IDMContext[] threads = getData();
 
-															int pid = 0;
-															try {
-																pid = Integer.parseInt(processData.getId());
-															} catch (NumberFormatException e) {
-															}
-															
-															String[] cores = null;
-															String owner = null;
-															if (processData instanceof IGdbThreadDMData) {
-																cores = ((IGdbThreadDMData)processData).getCores();
-																owner = ((IGdbThreadDMData)processData).getOwner();
-															}
-															
-															text.append(processData.getName());
-															
-															if (owner != null) {
-																text.append(" (" + owner + ")");  //$NON-NLS-1$//$NON-NLS-2$
-															}
-															
-															text.append(" - " + pid); //$NON-NLS-1$
+																		if (!isSuccess() || threads == null || threads.length < 1) {
+																			text.append("No threads for this process\n");
+																			crm.done();
+																			return;
+																		}
 
-															if (cores != null && cores.length > 0) {
-																String coreStr;
-																if (cores.length == 1) {
-																	coreStr = "core";
-																} else {
-																	coreStr = "cores";
-																}
-																text.append(" [" + coreStr + ": ");   //$NON-NLS-1$//$NON-NLS-2$
-																
-																for (String core : cores) {
-																	text.append(core + ", "); //$NON-NLS-1$
-																}
-																// Remove the last comma and space
-																text.replace(text.length()-2, text.length(), "]"); //$NON-NLS-1$
-															}
-															
-															text.append("\n");
-														}
-				    								}
-				    								
-													asyncExec(new Runnable() {
-														public void run() {
-															m_canvas.setText(text.toString());
-															m_canvas.redraw();
-														}});
+																		for (IDMContext thread : threads) {
+																			IExecutionDMContext execDmc = (IExecutionDMContext)thread;
+																			text.append("\t"+execDmc.toString()+"\n");
+																		}
+																		
+																		crm.done();
+																	}
+																});
+													}
 												}
 											});
-								} else {
-
-									asyncExec(new Runnable() {
-										public void run() {
-											m_canvas.setText(EMPTY_STRING);
-											m_canvas.redraw();
-										}});
-								}
-
-							}
-						});
+								}}});
 				return;
 			}
-		}
 		
-		if (m_canvas != null) {
-			m_canvas.setText(EMPTY_STRING);
-			m_canvas.redraw();
+			if (m_canvas != null) {
+				m_canvas.setText(EMPTY_STRING);
+				m_canvas.redraw();
+			}
 		}
 	}
 	
