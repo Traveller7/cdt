@@ -261,6 +261,12 @@ abstract public class Visualizer
 		m_selectionManager.setSelection(selection);
 	}
 
+	/** Sets externally-visible selection. */
+	public void setSelection(ISelection selection, boolean raiseEvent)
+	{
+		m_selectionManager.setSelection(selection, raiseEvent);
+	}
+
 	/** Returns true if we currently have a non-empty selection. */
 	public boolean hasSelection()
 	{
