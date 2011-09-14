@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+
+   
+
+
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            category="org.eclipse.debug.ui"
+            class="org.eclipse.cdt.visualizer.ui.VisualizerView"
+            icon="icons/full/view16/multicorevisualizer_view.gif"
+            id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.view"
+            name="%view.multicoreVisualizer.name">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.debug.ui.DebugPerspective">
+         <view
+               relative="org.eclipse.ui.views.ContentOutline"
+               visible="true"
+               relationship="stack"
+               id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.view">
+         </view>
+         <viewShortcut
+               id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.view">
+         </viewShortcut>
+      </perspectiveExtension>
+   </extension>
+   <extension
+         point="org.eclipse.cdt.visualizer.ui.visualizer">
+      <visualizer
+            class="org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.MulticoreVisualizer"
+            id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.visualizer">
+      </visualizer>
+   </extension>
+</plugin>
