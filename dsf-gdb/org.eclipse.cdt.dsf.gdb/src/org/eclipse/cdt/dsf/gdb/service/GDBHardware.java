@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
+import java.util.Vector;
 
 import org.eclipse.cdt.dsf.concurrent.DataRequestMonitor;
 import org.eclipse.cdt.dsf.concurrent.ImmediateExecutor;
@@ -23,7 +24,7 @@ import org.eclipse.cdt.dsf.datamodel.AbstractDMContext;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
 import org.eclipse.cdt.dsf.datamodel.IDMData;
 import org.eclipse.cdt.dsf.debug.service.ICachingService;
-import org.eclipse.cdt.dsf.debug.service.command.CommandCache;
+import org.eclipse.cdt.dsf.gdb.internal.CoreList;
 import org.eclipse.cdt.dsf.gdb.internal.GdbPlugin;
 import org.eclipse.cdt.dsf.gdb.service.command.IGDBControl;
 import org.eclipse.cdt.dsf.mi.service.IMICommandControl;
@@ -32,6 +33,7 @@ import org.eclipse.cdt.dsf.mi.service.command.output.MIListThreadGroupsInfo;
 import org.eclipse.cdt.dsf.mi.service.command.output.MIListThreadGroupsInfo.IThreadGroupInfo;
 import org.eclipse.cdt.dsf.service.AbstractDsfService;
 import org.eclipse.cdt.dsf.service.DsfSession;
+import org.eclipse.cdt.internal.core.ICoreInfo;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
@@ -43,6 +45,7 @@ import org.osgi.framework.BundleContext;
  * 
  * @since 4.1
  */
+@SuppressWarnings("restriction")
 public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICachingService {
 
 	@Immutable
@@ -129,7 +132,6 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
     private IGDBControl fCommandControl;
     private IGDBBackend fBackend;
     private CommandFactory fCommandFactory;
-	private CommandCache fCommandCache;
 	
 	// The list of cores should not change, so we can store
 	// it once we figured it out.
@@ -172,9 +174,6 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 
         fCommandFactory = getServicesTracker().getService(IMICommandControl.class).getCommandFactory();
 
-        fCommandCache = new CommandCache(getSession(), fCommandControl);
-        fCommandCache.setContextAvailable(fCommandControl.getContext(), true);
-
 		// Register this service.
 		register(new String[] { IGDBHardware.class.getName(),
 				                GDBHardware.class.getName() },
@@ -205,7 +204,7 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 		return GdbPlugin.getBundleContext();
 	}
 
-	public void getCPUs(IHardwareTargetDMContext context, DataRequestMonitor<ICPUDMContext[]> rm) {
+	public void getCPUs(IHardwareTargetDMContext dmc, DataRequestMonitor<ICPUDMContext[]> rm) {
 		if (fCPUs != null) {
 			rm.done(fCPUs);
 			return;
@@ -218,19 +217,52 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 		} else {
 			// For a local session, let's use /proc/cpuinfo on linux
 			if (Platform.getOS().equals(Platform.OS_LINUX)) {
-				rm.done(fCPUs);
+				Set<String> cpuIds = new HashSet<String>();
+
+				ICoreInfo[] cores = new CoreList().getCoreList();
+				for (ICoreInfo core : cores) {
+					cpuIds.add(core.getPhysicalId());
+				}
+
+				String[] cpuIdsArray = cpuIds.toArray(new String[cpuIds.size()]);
+				fCPUs = new ICPUDMContext[cpuIdsArray.length];
+				for (int i = 0; i < cpuIdsArray.length; i++) {
+					fCPUs[i] = new GDBCPUDMC(getSession().getId(), dmc, cpuIdsArray[i]);
+				}
 			} else {
 				// No way to know the CPUs on a local Windows session.
 				fCPUs = new ICPUDMContext[0];
-				rm.done(fCPUs);
 			}
+			rm.done(fCPUs);
 		}
 	}
 
 	public void getCores(IDMContext dmc, final DataRequestMonitor<ICoreDMContext[]> rm) {
 		if (dmc instanceof ICPUDMContext) {
 			// Get the cores under this particular CPU
-			rm.done(new Status(IStatus.ERROR, GdbPlugin.PLUGIN_ID, NOT_SUPPORTED, "Operation not supported", null)); //$NON-NLS-1$
+			ICPUDMContext cpuDmc = (ICPUDMContext)dmc;
+			
+			if (fBackend.getSessionType() == SessionType.REMOTE) {
+				rm.done(new Status(IStatus.ERROR, GdbPlugin.PLUGIN_ID, NOT_SUPPORTED, "Operation not supported", null)); //$NON-NLS-1$
+			} else {
+				if (Platform.getOS().equals(Platform.OS_LINUX)) {
+					// Use /proc/cpuinfo to find the cores and match them to the specified CPU
+					ICoreInfo[] cores = new CoreList().getCoreList();
+					
+					Vector<ICoreDMContext> coreDmcs = new Vector<ICoreDMContext>();
+					for (ICoreInfo core : cores) {
+						if (core.getPhysicalId().equals(cpuDmc.getId())){
+							// This core belongs to the right CPU
+						    coreDmcs.add(new GDBCoreDMC(getSession().getId(), cpuDmc, core.getId()));
+						}
+					}
+					
+					rm.done(coreDmcs.toArray(new ICoreDMContext[coreDmcs.size()]));
+				} else {
+					// No way to know the cores for a specific CPU on a remote Windows session.
+					rm.done(new Status(IStatus.ERROR, GdbPlugin.PLUGIN_ID, NOT_SUPPORTED, "Operation not supported", null)); //$NON-NLS-1$
+				}
+			}
 		} else if (dmc instanceof IHardwareTargetDMContext) {
 			final IHardwareTargetDMContext targetDmc = (IHardwareTargetDMContext)dmc;
 			
@@ -246,6 +278,9 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 				// command, which shows on which cores a process is running.  This does
 				// not necessarily give the exhaustive list of cores, but that is the best
 				// we have right now.
+				//
+				// In this case, we don't have knowledge about CPUs, so we lump all cores
+				// into a single CPU.
 				fCommandControl.queueCommand(
 						fCommandFactory.createMIListThreadGroups(fCommandControl.getContext(), true),
 						new DataRequestMonitor<MIListThreadGroupsInfo>(ImmediateExecutor.getInstance(), rm) {
@@ -260,7 +295,7 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 								
 								// Now create the context for each distinct core
 								//
-								// Note that until we support CPUs, let's put them all under
+								// We don't have CPU info in this case so let's put them all under
 								// a single CPU
 								ICPUDMContext cpuDmc = new GDBCPUDMC(getSession().getId(), targetDmc, "0"); //$NON-NLS-1$
 								Set<ICoreDMContext> coreDmcs = new HashSet<ICoreDMContext>();
@@ -276,12 +311,17 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 				// For a local session, -list-thread-groups --available does not return
 				// the cores field.  Let's use /proc/cpuinfo on linux instead
 				if (Platform.getOS().equals(Platform.OS_LINUX)) {
-					rm.done(fCores);
+					ICoreInfo[] cores = new CoreList().getCoreList();
+					fCores = new ICoreDMContext[cores.length];
+					for (int i = 0; i < cores.length; i++) {
+						ICPUDMContext cpuDmc = new GDBCPUDMC(getSession().getId(), targetDmc, cores[i].getPhysicalId());
+						fCores[i] = new GDBCoreDMC(getSession().getId(), cpuDmc, cores[i].getId());
+					}
 				} else {
 					// No way to know the cores on a local Windows session.
 					fCores = new ICoreDMContext[0];
-					rm.done(fCores);
 				}
+				rm.done(fCores);
 			}
 		} else {
 			rm.done(new Status(IStatus.ERROR, GdbPlugin.PLUGIN_ID, INVALID_HANDLE, "Invalid DMC type", null)); //$NON-NLS-1$
@@ -302,6 +342,5 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 	public void flushCache(IDMContext context) {
 		fCPUs = null;
 		fCores = null;
-		fCommandCache.reset(context);
 	}
 }

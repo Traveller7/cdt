@@ -148,6 +148,9 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 											
 											if (!isSuccess() || cpus == null || cpus.length < 1) {
 												// Unable to get CPUs.  Let's fetch the cores directly.
+												
+												crm.setDoneCount(1);
+
 												hwService.getCores(fTargetContext, 
 														new DataRequestMonitor<ICoreDMContext[]>(ImmediateExecutor.getInstance(), null) {
 															@Override
@@ -157,9 +160,9 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 																if (!isSuccess() || cores == null || cores.length < 1) {
 																	text.append("Unable to fetch information about the cores of the target\n");
 																} else {
-																	text.append("The target has a total of " + cores.length + (cores.length == 1 ? "core\n" : "cores\n"));
+																	text.append("The target has a total of " + cores.length + (cores.length == 1 ? " core\n" : " cores\n"));
 																	for (ICoreDMContext core : cores) {
-																		text.append("\tcore: " + core.getId() + "\n");
+																		text.append("\t\tcore: " + core.getId() + "\n");
 																	}
 																}																
 																crm.done();
@@ -171,7 +174,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 											// For each CPU, look for its cores
 											crm.setDoneCount(cpus.length);
 
-											text.append("The target has a total of " + cpus.length + (cpus.length == 1 ? "CPU\n" : "CPUs\n"));
+											text.append("The target has a total of " + cpus.length + (cpus.length == 1 ? " CPU\n" : " CPUs\n"));
 
 											for (final ICPUDMContext cpu : cpus) {
 												text.append("CPU " + cpu.getId());
@@ -183,9 +186,9 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 																ICoreDMContext[] cores = getData();
 																
 																if (!isSuccess() || cores == null || cores.length < 1) {
-																	text.append("\n\tUnable to fetch information about the cores of cpu" + cpu.getId() + "\n");
+																	text.append("\n\tUnable to fetch information about the cores of cpu " + cpu.getId() + "\n");
 																} else {
-																	text.append(" has a total of " + cores.length + (cores.length == 1 ? "core:\n" : "cores:\n"));
+																	text.append(" has a total of " + cores.length + (cores.length == 1 ? " core:\n" : " cores:\n"));
 																	for (ICoreDMContext core : cores) {
 																		text.append("\tcore: " + core.getId() + "\n");
 																	}
