@@ -89,7 +89,13 @@ public class GdbDebugServicesFactory extends AbstractDsfDebugServicesFactory {
 					return (V)createTraceControlService(session, (ILaunchConfiguration)arg);
 				}
 			}
-		}
+		} else if (IGDBHardware.class.isAssignableFrom(clazz)) {
+			for (Object arg : optionalArguments) {
+				if (arg instanceof ILaunchConfiguration) {
+					return (V)createHardwareService(session, (ILaunchConfiguration)arg);
+				}
+			}
+	}
 
         return super.createService(clazz, session);
 	}
@@ -204,5 +210,10 @@ public class GdbDebugServicesFactory extends AbstractDsfDebugServicesFactory {
 		// but the service would have to be properly coded, as some MI commands don't exists
 		// in those older GDB versions.  Also, gdbserver only supports tracing starting with 7.2
 		return null;		
+	}
+	
+	/** @since 4.1 */
+	protected IGDBHardware createHardwareService(DsfSession session, ILaunchConfiguration config) {
+		return new GDBHardware(session);
 	}
 }

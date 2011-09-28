@@ -18,11 +18,11 @@ import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
 import org.eclipse.cdt.dsf.concurrent.ImmediateExecutor;
 import org.eclipse.cdt.dsf.datamodel.DMContexts;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
-import org.eclipse.cdt.dsf.debug.service.IProcesses;
-import org.eclipse.cdt.dsf.debug.service.IRunControl.IContainerDMContext;
-import org.eclipse.cdt.dsf.debug.service.IRunControl.IExecutionDMContext;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.ISuspendedDMEvent;
-import org.eclipse.cdt.dsf.debug.service.command.ICommandControlService.ICommandControlDMContext;
+import org.eclipse.cdt.dsf.gdb.service.IGDBHardware;
+import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICPUDMContext;
+import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICoreDMContext;
+import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.IHardwareTargetDMContext;
 import org.eclipse.cdt.dsf.service.DsfServiceEventHandler;
 import org.eclipse.cdt.dsf.service.DsfServicesTracker;
 import org.eclipse.cdt.dsf.service.DsfSession;
@@ -40,24 +40,14 @@ import org.eclipse.swt.widgets.Composite;
 public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 
 
-	// --- constants ---
-	
-	/** Eclipse ID for this visualizer */
-	public static final String ECLIPSE_ID = "org.eclipse.cdt.dsf.gdb.multicorevisualizer.ui.Visualizer";
-
 	private static final String EMPTY_STRING = ""; //$NON-NLS-1$
 
 	private String fDebugSessionId;
 	private DsfServicesTracker fServicesTracker;
-	private volatile ICommandControlDMContext fTargetContext;
+	private volatile IHardwareTargetDMContext fTargetContext;
 
-	// --- members ---
-	
 	/** Visualizer control. */
-	TestCanvas m_canvas = null;
-	
-
-	// --- constructors/destructors ---
+	private TestCanvas fCanvas = null;
 	
 	public MulticoreVisualizer() {
 	}
@@ -65,9 +55,8 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 	// --- accessors ---
 	
 	/** Gets canvas control. */
-	public TestCanvas getDefaultCanvas()
-	{
-		return m_canvas;
+	public TestCanvas getDefaultCanvas() {
+		return fCanvas;
 	}
 
 	
@@ -95,18 +84,16 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 	
 	/** Creates and returns visualizer canvas control. */
 	@Override
-	public GraphicCanvas createCanvas(Composite parent)
-	{
-		m_canvas = new TestCanvas(parent);
-		return m_canvas;
+	public GraphicCanvas createCanvas(Composite parent) {
+		fCanvas = new TestCanvas(parent);
+		return fCanvas;
 	}
 	
 	/** Invoked after visualizer control creation, */
 	@Override
-	protected void initializeCanvas(GraphicCanvas canvas)
-	{
-		m_canvas.setBackground(canvas.getDisplay().getSystemColor(SWT.COLOR_WHITE));
-		m_canvas.setForeground(canvas.getDisplay().getSystemColor(SWT.COLOR_BLACK));
+	protected void initializeCanvas(GraphicCanvas canvas) {
+		fCanvas.setBackground(canvas.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+		fCanvas.setForeground(canvas.getDisplay().getSystemColor(SWT.COLOR_BLACK));
 	}
 
 
@@ -117,8 +104,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
      * (or something reachable from it).
      */
 	@Override
-	public int handlesSelection(ISelection selection)
-	{
+	public int handlesSelection(ISelection selection) {
 		// By default, we don't support anything.
 		// Changing this to return 1 enables the test canvas.
 		return 1;
@@ -128,84 +114,161 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
      * Invoked by VisualizerViewer when workbench selection changes.
      */
 	@Override
-	public void workbenchSelectionChanged(ISelection selection)
-	{
+	public void workbenchSelectionChanged(ISelection selection) {
 		updateDebugContext();
 	}
 	
 	
 	protected void updateContent() {			
 		if (fDebugSessionId != null && getSession() != null) {
-			final ICommandControlDMContext ctx = DMContexts.getAncestorOfType(fTargetContext, ICommandControlDMContext.class);
-			if (ctx != null) {
-				getSession().getExecutor().execute(
-						new DsfRunnable() {	
-							public void run() {
-								final IProcesses procService = getService(IProcesses.class);
-								if (procService != null) {
-									final StringBuffer text = new StringBuffer();
-									
-									final CountingRequestMonitor crm = new CountingRequestMonitor(ImmediateExecutor.getInstance(), null) {
+			getSession().getExecutor().execute(
+					new DsfRunnable() {	
+						public void run() {
+							final IGDBHardware hwService = getService(IGDBHardware.class);
+							if (hwService != null) {
+								final StringBuffer text = new StringBuffer();
+								
+								final CountingRequestMonitor crm = new CountingRequestMonitor(ImmediateExecutor.getInstance(), null) {
+									@Override
+									protected void handleCompleted() {
+										asyncExec(new Runnable() {
+											public void run() {
+												fCanvas.setText(text.toString());
+												fCanvas.redraw();
+											}});
+									}
+								};
+								
+								// First get the CPUs
+								hwService.getCPUs(fTargetContext, 
+									new DataRequestMonitor<ICPUDMContext[]>(ImmediateExecutor.getInstance(), null) {
 										@Override
 										protected void handleCompleted() {
-    										asyncExec(new Runnable() {
-    											public void run() {
-    												m_canvas.setText(text.toString());
-    												m_canvas.redraw();
-    											}});
-										}
-									};
-									
-									procService.getProcessesBeingDebugged(
-											ctx, new DataRequestMonitor<IDMContext[]>(ImmediateExecutor.getInstance(), null) {
-												@Override
-												protected void handleCompleted() {
-													IDMContext[] procs = getData();
-													
-													if (!isSuccess() || procs == null || procs.length < 1) {
-			    										text.append("No processes being debugged\n");
-			    										crm.setDoneCount(0);
-			    										return;
-													}
-													
-													// For each process, look for its threads
-													crm.setDoneCount(procs.length);
-													
-													for (IDMContext dmc : procs) {
-														IContainerDMContext container = (IContainerDMContext)dmc;
-														text.append(container.toString()+"\n");
-
-														procService.getProcessesBeingDebugged(
-																container,
-																new DataRequestMonitor<IDMContext[]>(ImmediateExecutor.getInstance(), crm) {
-																	@Override
-																	protected void handleCompleted() {
-																		IDMContext[] threads = getData();
-
-																		if (!isSuccess() || threads == null || threads.length < 1) {
-																			text.append("No threads for this process\n");
-																			crm.done();
-																			return;
-																		}
-
-																		for (IDMContext thread : threads) {
-																			IExecutionDMContext execDmc = (IExecutionDMContext)thread;
-																			text.append("\t"+execDmc.toString()+"\n");
-																		}
-																		
-																		crm.done();
+											ICPUDMContext[] cpus = getData();
+											
+											if (!isSuccess() || cpus == null || cpus.length < 1) {
+												// Unable to get CPUs.  Let's fetch the cores directly.
+												hwService.getCores(fTargetContext, 
+														new DataRequestMonitor<ICoreDMContext[]>(ImmediateExecutor.getInstance(), null) {
+															@Override
+															protected void handleCompleted() {
+																ICoreDMContext[] cores = getData();
+																
+																if (!isSuccess() || cores == null || cores.length < 1) {
+																	text.append("Unable to fetch information about the cores of the target\n");
+																} else {
+																	text.append("The target has a total of " + cores.length + (cores.length == 1 ? "core\n" : "cores\n"));
+																	for (ICoreDMContext core : cores) {
+																		text.append("\tcore: " + core.getId() + "\n");
 																	}
-																});
-													}
-												}
-											});
-								}}});
-				return;
-			}
+																}																
+																crm.done();
+															}
+														});
+	    										return;
+											}
+
+											// For each CPU, look for its cores
+											crm.setDoneCount(cpus.length);
+
+											text.append("The target has a total of " + cpus.length + (cpus.length == 1 ? "CPU\n" : "CPUs\n"));
+
+											for (final ICPUDMContext cpu : cpus) {
+												text.append("CPU " + cpu.getId());
+												
+												hwService.getCores(cpu, 
+														new DataRequestMonitor<ICoreDMContext[]>(ImmediateExecutor.getInstance(), null) {
+															@Override
+															protected void handleCompleted() {
+																ICoreDMContext[] cores = getData();
+																
+																if (!isSuccess() || cores == null || cores.length < 1) {
+																	text.append("\n\tUnable to fetch information about the cores of cpu" + cpu.getId() + "\n");
+																} else {
+																	text.append(" has a total of " + cores.length + (cores.length == 1 ? "core:\n" : "cores:\n"));
+																	for (ICoreDMContext core : cores) {
+																		text.append("\tcore: " + core.getId() + "\n");
+																	}
+																}																
+																crm.done();
+															}
+														});
+											}
+										}
+									});
+							}}});
+		} else {
+			
+//			final ICommandControlDMContext ctx = DMContexts.getAncestorOfType(fTargetContext, ICommandControlDMContext.class);
+//			if (ctx != null) {
+//				getSession().getExecutor().execute(
+//						new DsfRunnable() {	
+//							public void run() {
+//								final IProcesses procService = getService(IProcesses.class);
+//								if (procService != null) {
+//									final StringBuffer text = new StringBuffer();
+//									
+//									final CountingRequestMonitor crm = new CountingRequestMonitor(ImmediateExecutor.getInstance(), null) {
+//										@Override
+//										protected void handleCompleted() {
+//    										asyncExec(new Runnable() {
+//    											public void run() {
+//    												fCanvas.setText(text.toString());
+//    												fCanvas.redraw();
+//    											}});
+//										}
+//									};
+//									
+//									procService.getProcessesBeingDebugged(
+//											ctx, new DataRequestMonitor<IDMContext[]>(ImmediateExecutor.getInstance(), null) {
+//												@Override
+//												protected void handleCompleted() {
+//													IDMContext[] procs = getData();
+//													
+//													if (!isSuccess() || procs == null || procs.length < 1) {
+//			    										text.append("No processes being debugged\n");
+//			    										crm.setDoneCount(0);
+//			    										return;
+//													}
+//													
+//													// For each process, look for its threads
+//													crm.setDoneCount(procs.length);
+//													
+//													for (IDMContext dmc : procs) {
+//														IContainerDMContext container = (IContainerDMContext)dmc;
+//														text.append(container.toString()+"\n");
+//
+//														procService.getProcessesBeingDebugged(
+//																container,
+//																new DataRequestMonitor<IDMContext[]>(ImmediateExecutor.getInstance(), crm) {
+//																	@Override
+//																	protected void handleCompleted() {
+//																		IDMContext[] threads = getData();
+//
+//																		if (!isSuccess() || threads == null || threads.length < 1) {
+//																			text.append("No threads for this process\n");
+//																			crm.done();
+//																			return;
+//																		}
+//
+//																		for (IDMContext thread : threads) {
+//																			IExecutionDMContext execDmc = (IExecutionDMContext)thread;
+//																			text.append("\t"+execDmc.toString()+"\n");
+//																		}
+//																		
+//																		crm.done();
+//																	}
+//																});
+//													}
+//												}
+//											});
+//								}}});
+//				return;
+//			}
 		
-			if (m_canvas != null) {
-				m_canvas.setText(EMPTY_STRING);
-				m_canvas.redraw();
+			if (fCanvas != null) {
+				fCanvas.setText(EMPTY_STRING);
+				fCanvas.redraw();
 			}
 		}
 	}
@@ -223,7 +286,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 		if (vmContext != null) {
 			IDMContext dmContext = vmContext.getDMContext();
 			String sessionId = dmContext.getSessionId();
-			fTargetContext = DMContexts.getAncestorOfType(dmContext, ICommandControlDMContext.class);
+			fTargetContext = DMContexts.getAncestorOfType(dmContext, IHardwareTargetDMContext.class);
 			if (!sessionId.equals(fDebugSessionId)) {
 				if (fDebugSessionId != null && getSession() != null) {
 					try {
@@ -286,8 +349,8 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 
 	
 	private void asyncExec(Runnable runnable) {
-		if (m_canvas != null) {
-			m_canvas.getDisplay().asyncExec(runnable);
+		if (fCanvas != null) {
+			fCanvas.getDisplay().asyncExec(runnable);
 		}
 	}
 
