@@ -12,10 +12,12 @@ package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui;
 
 import java.util.concurrent.RejectedExecutionException;
 
+import org.eclipse.cdt.dsf.concurrent.ConfinedToDsfExecutor;
 import org.eclipse.cdt.dsf.concurrent.CountingRequestMonitor;
 import org.eclipse.cdt.dsf.concurrent.DataRequestMonitor;
 import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
 import org.eclipse.cdt.dsf.concurrent.ImmediateExecutor;
+import org.eclipse.cdt.dsf.concurrent.RequestMonitor;
 import org.eclipse.cdt.dsf.datamodel.DMContexts;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.ISuspendedDMEvent;
@@ -118,88 +120,99 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 		updateDebugContext();
 	}
 	
+	@ConfinedToDsfExecutor("getSession().getExecutor()")
+	private void getCoreInfo(final IDMContext dmc, final StringBuffer text, final RequestMonitor rm) {
+		final IGDBHardware hwService = getService(IGDBHardware.class);
+		if (hwService != null) {
+			hwService.getCores(dmc, 
+					new DataRequestMonitor<ICoreDMContext[]>(ImmediateExecutor.getInstance(), null) {
+						@Override
+						protected void handleCompleted() {
+							ICoreDMContext[] cores = getData();
+							
+							if (!isSuccess() || cores == null || cores.length < 1) {
+								if (dmc instanceof ICPUDMContext) {
+									text.append("\nUnable to fetch information about the cores of cpu " + ((ICPUDMContext)dmc).getId() + "\n");
+								} else {
+									text.append("Unable to fetch information about the cores of the target\n");
+								}
+							} else {
+								if (dmc instanceof ICPUDMContext) {
+									text.append(" has a total of " + cores.length + (cores.length == 1 ? " core:\n" : " cores:\n"));
+									for (ICoreDMContext core : cores) {
+										text.append("core: " + core.getId() + "\n");
+									}
+								} else {
+									text.append("The target has a total of " + cores.length + (cores.length == 1 ? " core\n" : " cores\n"));
+									for (ICoreDMContext core : cores) {
+										text.append("core: " + core.getId() + "\n");
+									}
+								}																
+							}
+							rm.done();
+						}
+					});
+		} else {
+			rm.done();
+		}
+	}
+
+	@ConfinedToDsfExecutor("getSession().getExecutor()")
+	private void getCPUInfo(IHardwareTargetDMContext targetDmc, final StringBuffer text, final RequestMonitor rm) {
+		final IGDBHardware hwService = getService(IGDBHardware.class);
+		if (hwService != null) {
+			final CountingRequestMonitor crm = new CountingRequestMonitor(ImmediateExecutor.getInstance(), rm);
+			
+			hwService.getCPUs(targetDmc, 
+					new DataRequestMonitor<ICPUDMContext[]>(ImmediateExecutor.getInstance(), null) {
+						@Override
+						protected void handleCompleted() {
+							ICPUDMContext[] cpus = getData();
+
+							if (!isSuccess() || cpus == null || cpus.length < 1) {
+								// Unable to get CPUs.  Let's fetch the cores directly.
+								crm.setDoneCount(1);
+								getCoreInfo(fTargetContext, text, crm);
+								return;
+							}
+
+							// For each CPU, look for its cores
+							crm.setDoneCount(cpus.length);
+
+							text.append("The target has a total of " + cpus.length + (cpus.length == 1 ? " CPU\n" : " CPUs\n"));
+
+							for (final ICPUDMContext cpu : cpus) {
+								text.append("CPU " + cpu.getId());
+								getCoreInfo(cpu, text, crm);
+							}
+						}
+					});
+		} else {
+			rm.done();
+		}
+	}
+	
 	
 	protected void updateContent() {			
 		if (fDebugSessionId != null && getSession() != null) {
 			getSession().getExecutor().execute(
 					new DsfRunnable() {	
 						public void run() {
-							final IGDBHardware hwService = getService(IGDBHardware.class);
-							if (hwService != null) {
 								final StringBuffer text = new StringBuffer();
 								
-								final CountingRequestMonitor crm = new CountingRequestMonitor(ImmediateExecutor.getInstance(), null) {
-									@Override
-									protected void handleCompleted() {
-										asyncExec(new Runnable() {
-											public void run() {
-												fCanvas.setText(text.toString());
-												fCanvas.redraw();
-											}});
-									}
-								};
-								
 								// First get the CPUs
-								hwService.getCPUs(fTargetContext, 
-									new DataRequestMonitor<ICPUDMContext[]>(ImmediateExecutor.getInstance(), null) {
-										@Override
-										protected void handleCompleted() {
-											ICPUDMContext[] cpus = getData();
-											
-											if (!isSuccess() || cpus == null || cpus.length < 1) {
-												// Unable to get CPUs.  Let's fetch the cores directly.
-												
-												crm.setDoneCount(1);
-
-												hwService.getCores(fTargetContext, 
-														new DataRequestMonitor<ICoreDMContext[]>(ImmediateExecutor.getInstance(), null) {
-															@Override
-															protected void handleCompleted() {
-																ICoreDMContext[] cores = getData();
-																
-																if (!isSuccess() || cores == null || cores.length < 1) {
-																	text.append("Unable to fetch information about the cores of the target\n");
-																} else {
-																	text.append("The target has a total of " + cores.length + (cores.length == 1 ? " core\n" : " cores\n"));
-																	for (ICoreDMContext core : cores) {
-																		text.append("\t\tcore: " + core.getId() + "\n");
-																	}
-																}																
-																crm.done();
-															}
-														});
-	    										return;
-											}
-
-											// For each CPU, look for its cores
-											crm.setDoneCount(cpus.length);
-
-											text.append("The target has a total of " + cpus.length + (cpus.length == 1 ? " CPU\n" : " CPUs\n"));
-
-											for (final ICPUDMContext cpu : cpus) {
-												text.append("CPU " + cpu.getId());
-												
-												hwService.getCores(cpu, 
-														new DataRequestMonitor<ICoreDMContext[]>(ImmediateExecutor.getInstance(), null) {
-															@Override
-															protected void handleCompleted() {
-																ICoreDMContext[] cores = getData();
-																
-																if (!isSuccess() || cores == null || cores.length < 1) {
-																	text.append("\n\tUnable to fetch information about the cores of cpu " + cpu.getId() + "\n");
-																} else {
-																	text.append(" has a total of " + cores.length + (cores.length == 1 ? " core:\n" : " cores:\n"));
-																	for (ICoreDMContext core : cores) {
-																		text.append("\tcore: " + core.getId() + "\n");
-																	}
-																}																
-																crm.done();
-															}
-														});
-											}
-										}
-									});
-							}}});
+								getCPUInfo(fTargetContext, text, 
+										   new RequestMonitor(ImmediateExecutor.getInstance(), null) {
+												@Override
+												protected void handleCompleted() {
+													asyncExec(new Runnable() {
+														public void run() {
+															fCanvas.setText(text.toString());
+															fCanvas.redraw();
+														}});
+												}
+								});
+						}});
 		} else {
 			
 //			final ICommandControlDMContext ctx = DMContexts.getAncestorOfType(fTargetContext, ICommandControlDMContext.class);
