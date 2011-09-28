@@ -1866,4 +1866,46 @@ public class IndexCPPTemplateResolutionTest extends IndexBindingResolutionTestBa
 		IBinding[] friends = ct.getFriends();
 		assertEquals(0, friends.length); // not yet supported
 	}
+	
+	//	struct A {
+	//		void f() { }
+	//	};
+	//	template <typename T> struct B : A {
+	//		using A::f;
+	//		void f(int) { }
+	//	};
+	//	template <typename T> struct C : B<T> {
+	//		using B<T>::f;
+	//		void f(int, int);
+	//	};
+	//	B<float> b;
+	//	C<float> c;
+	
+	// #include "header.h"
+	//	void test() {
+	//		b.f();
+	//		b.f(1);
+	//		c.f( );
+	//		c.f(2);
+	//		c.f(2,1);
+	//	}
+	public void testSpecializationOfUsingDeclaration_357293() throws Exception {
+		getBindingFromASTName("f()", 1, ICPPMethod.class);
+		getBindingFromASTName("f(1)", 1, ICPPMethod.class);
+		getBindingFromASTName("f( )", 1, ICPPMethod.class);
+		getBindingFromASTName("f(2)", 1, ICPPMethod.class);
+		getBindingFromASTName("f(2,1)", 1, ICPPMethod.class);
+	}
+
+	//	template<class T> struct C1 {
+	//	    typedef int iterator;
+	//	    iterator m1();
+	//	};
+
+	//	template<class T> typename C1<T>::iterator C1<T>::m1() {
+	//		return 0;
+	//	}
+	public void testUsageOfClassTemplateOutsideOfClassBody_357320() throws Exception {
+		getBindingFromASTName("m1", 0, ICPPMethod.class);
+	}
 }

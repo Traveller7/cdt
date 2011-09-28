@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.eclipse.cdt.core.dom.IName;
 import org.eclipse.cdt.core.dom.ast.ASTTypeUtil;
 import org.eclipse.cdt.core.dom.ast.ASTVisitor;
 import org.eclipse.cdt.core.dom.ast.DOMException;
@@ -79,7 +78,6 @@ import org.eclipse.cdt.core.dom.ast.cpp.ICPPFunctionType;
 import org.eclipse.cdt.core.dom.ast.cpp.ICPPMethod;
 import org.eclipse.cdt.core.dom.ast.cpp.ICPPParameterPackType;
 import org.eclipse.cdt.core.dom.ast.cpp.ICPPPointerToMemberType;
-import org.eclipse.cdt.core.dom.ast.cpp.ICPPScope;
 import org.eclipse.cdt.core.dom.ast.cpp.ICPPSpecialization;
 import org.eclipse.cdt.core.dom.ast.cpp.ICPPTemplateArgument;
 import org.eclipse.cdt.core.dom.ast.cpp.ICPPTemplateDefinition;
@@ -89,6 +87,7 @@ import org.eclipse.cdt.core.dom.ast.cpp.ICPPTemplateParameter;
 import org.eclipse.cdt.core.dom.ast.cpp.ICPPTemplateParameterMap;
 import org.eclipse.cdt.core.dom.ast.cpp.ICPPTemplateTemplateParameter;
 import org.eclipse.cdt.core.dom.ast.cpp.ICPPTemplateTypeParameter;
+import org.eclipse.cdt.core.dom.ast.cpp.ICPPUsingDeclaration;
 import org.eclipse.cdt.core.index.IIndexBinding;
 import org.eclipse.cdt.core.parser.util.ArrayUtil;
 import org.eclipse.cdt.core.parser.util.CharArraySet;
@@ -134,6 +133,7 @@ import org.eclipse.cdt.internal.core.dom.parser.cpp.CPPUnknownBinding;
 import org.eclipse.cdt.internal.core.dom.parser.cpp.CPPUnknownClass;
 import org.eclipse.cdt.internal.core.dom.parser.cpp.CPPUnknownClassInstance;
 import org.eclipse.cdt.internal.core.dom.parser.cpp.CPPUnknownFunction;
+import org.eclipse.cdt.internal.core.dom.parser.cpp.CPPUsingDeclarationSpecialization;
 import org.eclipse.cdt.internal.core.dom.parser.cpp.ICPPASTInternalTemplateDeclaration;
 import org.eclipse.cdt.internal.core.dom.parser.cpp.ICPPDeferredClassInstance;
 import org.eclipse.cdt.internal.core.dom.parser.cpp.ICPPInstanceCache;
@@ -254,41 +254,44 @@ public class CPPTemplates {
 
 	static IBinding isUsedInClassTemplateScope(ICPPClassTemplate ct, IASTName name) {
 		try {
-			IASTName start= name;
+			IScope scope;
 			ICPPASTFunctionDefinition func= CPPVisitor.findEnclosingFunctionDefinition(name);
 			if (func != null) {
-				start= ASTQueries.findInnermostDeclarator(func.getDeclarator()).getName();
-				start= start.getLastName();
+				name= ASTQueries.findInnermostDeclarator(func.getDeclarator()).getName().getLastName();
+				scope= CPPVisitor.getContainingScope(name);
+			} else {
+				scope= CPPVisitor.getContainingScope(name);
+				if (!(scope instanceof IASTInternalScope))
+					return null;
 			}
-
-			IScope scope= CPPVisitor.getContainingScope(start);
-			while (scope instanceof IASTInternalScope) {
+				
+			while (scope != null) {
 				if (scope instanceof ISemanticProblem)
 					return null;
-				final IASTInternalScope internalScope = (IASTInternalScope) scope;
 				if (scope instanceof ICPPClassScope) {
-					final IName scopeName = internalScope.getScopeName();
-					if (scopeName instanceof IASTName) {
-						IBinding b= ((IASTName) scopeName).resolveBinding();
-						if (b instanceof IType && ct.isSameType((IType) b)) {
-							return CPPTemplates.instantiateWithinClassTemplate(ct);
+					ICPPClassType b= ((ICPPClassScope) scope).getClassType();
+					if (b != null && ct.isSameType(b)) {
+						return CPPTemplates.instantiateWithinClassTemplate(ct);
+					}
+					if (b instanceof ICPPClassTemplatePartialSpecialization) {
+						ICPPClassTemplatePartialSpecialization pspec= (ICPPClassTemplatePartialSpecialization) b;
+						if (ct.isSameType(pspec.getPrimaryClassTemplate())) {
+							return CPPTemplates.instantiateWithinClassTemplate(pspec);
 						}
-						if (b instanceof ICPPClassTemplatePartialSpecialization) {
-							ICPPClassTemplatePartialSpecialization pspec= (ICPPClassTemplatePartialSpecialization) b;
-							if (ct.isSameType(pspec.getPrimaryClassTemplate())) {
-								return CPPTemplates.instantiateWithinClassTemplate(pspec);
-							}
-						} else if (b instanceof ICPPClassSpecialization) {
-							ICPPClassSpecialization specialization= (ICPPClassSpecialization) b;
-							if (ct.isSameType(specialization.getSpecializedBinding())) {
-								return specialization;
-							}
-						}
+					} else if (b instanceof ICPPClassSpecialization) {
+						ICPPClassSpecialization specialization= (ICPPClassSpecialization) b;
+						if (ct.isSameType(specialization.getSpecializedBinding())) {
+							return specialization;						}
 					}
 				}
-				scope= CPPVisitor.getContainingScope(internalScope.getPhysicalNode());
-				if (scope == internalScope)
-					return null;
+				if (scope instanceof IASTInternalScope) {
+					IASTInternalScope internalScope= (IASTInternalScope) scope;
+					scope= CPPVisitor.getContainingScope(internalScope.getPhysicalNode());
+					if (scope == internalScope)
+						return null;
+				} else { 
+					scope= scope.getParent();
+				}
 			}
 		} catch (DOMException e) {
 		}
@@ -597,20 +600,6 @@ public class CPPTemplates {
     	return new CPPTemplateNonTypeParameter(ASTQueries.findInnermostDeclarator(dtor).getName());
 	}
 	
-	static public ICPPScope getContainingScope(IASTNode node) {
-		while (node != null) {
-			if (node instanceof ICPPASTTemplateParameter) {
-				IASTNode parent = node.getParent();
-				if (parent instanceof ICPPASTTemplateDeclaration) {
-					return ((ICPPASTTemplateDeclaration) parent).getScope();
-				}
-			}
-			node = node.getParent();
-		}
-
-		return null;
-	}
-
 	public static IBinding createBinding(ICPPASTTemplateId id) {
 		if (!isClassTemplate(id)) {
 			//functions are instantiated as part of the resolution process
@@ -794,6 +783,8 @@ public class CPPTemplates {
 		} else if (decl instanceof IEnumeration || decl instanceof IEnumerator) {
 			// TODO(sprigogin): Deal with a case when an enumerator value depends on a template parameter.
 		    spec = decl;
+		} else if (decl instanceof ICPPUsingDeclaration) {
+			spec= new CPPUsingDeclarationSpecialization((ICPPUsingDeclaration) decl, owner, tpMap);
 		}
 		return spec;
 	}
@@ -2294,7 +2285,7 @@ public class CPPTemplates {
 	/**
 	 * Attempts to (partially) resolve an unknown binding with the given arguments.
 	 */
-	private static IBinding resolveUnknown(ICPPUnknownBinding unknown, ICPPTemplateParameterMap tpMap,
+	public static IBinding resolveUnknown(ICPPUnknownBinding unknown, ICPPTemplateParameterMap tpMap,
 			int packOffset, ICPPClassSpecialization within) throws DOMException {
         if (unknown instanceof ICPPDeferredClassInstance) {
         	return resolveDeferredClassInstance((ICPPDeferredClassInstance) unknown, tpMap, packOffset, within);
