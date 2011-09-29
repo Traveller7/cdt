@@ -35,6 +35,7 @@ import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICoreDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.IHardwareTargetDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBProcesses.IGdbThreadDMData;
 import org.eclipse.cdt.dsf.mi.service.IMIExecutionDMContext;
+import org.eclipse.cdt.dsf.mi.service.IMIProcessDMContext;
 import org.eclipse.cdt.dsf.service.DsfServiceEventHandler;
 import org.eclipse.cdt.dsf.service.DsfServicesTracker;
 import org.eclipse.cdt.dsf.service.DsfSession;
@@ -185,7 +186,9 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer {
 
 															if (coreDmc.getId().equals(cores[0])) {
 																// This thread belongs to the proper core
-																text.append("      thread " + execDmc.getThreadId() + "\n");
+																IMIProcessDMContext procDmc = DMContexts.getAncestorOfType(execDmc, IMIProcessDMContext.class);
+																text.append("      thread " + execDmc.getThreadId());
+																text.append(" (process " + procDmc.getProcId() + ")\n");
 															}
 														}
 
