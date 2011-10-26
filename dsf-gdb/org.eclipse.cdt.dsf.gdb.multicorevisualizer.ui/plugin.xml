@@ -2,23 +2,18 @@
 <?eclipse version="3.0"?>
 <plugin>
 
-   
+   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+   <!-- Views                                                                       -->
+   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
+   <!-- Debug Perspective -->
 
-   <extension
-         point="org.eclipse.ui.views">
-      <view
-            category="org.eclipse.debug.ui"
-            class="org.eclipse.cdt.visualizer.ui.VisualizerView"
-            icon="icons/full/view16/multicorevisualizer_view.gif"
-            id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.view"
-            name="%view.multicoreVisualizer.name">
-      </view>
-   </extension>
    <extension
          point="org.eclipse.ui.perspectiveExtensions">
       <perspectiveExtension
             targetID="org.eclipse.debug.ui.DebugPerspective">
+            
+         <!-- add Visualizer View in same "slot" as outline view -->
          <view
                relative="org.eclipse.ui.views.ContentOutline"
                visible="true"
@@ -30,11 +25,44 @@
          </viewShortcut>
       </perspectiveExtension>
    </extension>
+
+
+   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+   <!-- Visualizer View                                                             -->
+   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+   <!-- Visualizer "Container" View -->
+
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            category="org.eclipse.debug.ui"
+            class="org.eclipse.cdt.visualizer.ui.VisualizerView"
+            icon="icons/full/view16/multicorevisualizer_view.gif"
+            id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.view"
+            name="%view.multicoreVisualizer.name">
+      </view>
+   </extension>
+
+   <!-- Visualizer Declarations -->
+   
    <extension
          point="org.eclipse.cdt.visualizer.ui.visualizer">
+
+      <!-- "Text View" visualizer -->
+
       <visualizer
-            class="org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.MulticoreVisualizer"
-            id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.visualizer">
+            id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.visualizer"
+            class="org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.MulticoreVisualizer">
       </visualizer>
+
+      <!-- "Multicore View" visualizer -->
+
+      <visualizer
+            id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.visualizer2"
+            class="org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view.MulticoreVisualizer">
+      </visualizer>
+
    </extension>
+
 </plugin>
