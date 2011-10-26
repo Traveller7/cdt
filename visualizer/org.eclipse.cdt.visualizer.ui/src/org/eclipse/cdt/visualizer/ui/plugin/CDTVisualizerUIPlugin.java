@@ -31,14 +31,14 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Status;
 
 // Custom classes
-import org.eclipse.cdt.visualizer.core.ResourceManager;
 import org.eclipse.cdt.visualizer.core.plugin.CDTVisualizerCorePlugin;
+import org.eclipse.cdt.visualizer.ui.util.Colors;
 import org.eclipse.cdt.visualizer.ui.util.UIResourceManager;
 import org.eclipse.jface.resource.ImageDescriptor;
 
 
 // ----------------------------------------------------------------------------
-// CDTVisualizerCorePlugin
+// CDTVisualizerUIPlugin
 // ----------------------------------------------------------------------------
 
 /**
@@ -126,7 +126,11 @@ public class CDTVisualizerUIPlugin extends AbstractUIPlugin
 		if (s_resources == null) {
 			s_resources = new UIResourceManager(this);
 			s_resources.setParentManager(CDTVisualizerCorePlugin.getResources());
+
+			// initialize Colors class, now that UIResources object is available.
+			Colors.initialize(s_resources);
 		}
+		
 		return s_resources;
 	}
 	
@@ -136,7 +140,7 @@ public class CDTVisualizerUIPlugin extends AbstractUIPlugin
 	}
 	
 	/** Convenience method for getting plugin resource manager */
-	public static ResourceManager getResources() {
+	public static UIResourceManager getResources() {
 		return getDefault().getPluginResources();
 	}
 	
