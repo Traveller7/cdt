@@ -112,10 +112,16 @@ public class GraphicCanvas extends BufferedCanvas
 		
 		// we paint object list from start to end,
 		// so end of the list is "top" in z-ordering
+
+		// allow objects to draw themselves
 		for (IGraphicObject gobj : m_objects) {
-			// Note: an object can choose not to paint itself,
-			// we just give each object a chance to draw itself in drawing z-order
-			gobj.paint(gc);
+			gobj.paint(gc, false);
+		}
+
+		// allow objects to paint any "decorations" on top of other stuff
+		for (IGraphicObject gobj : m_objects) {
+			if (gobj.hasDecorations())
+				gobj.paint(gc, true);
 		}
 	}
 	

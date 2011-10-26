@@ -36,8 +36,14 @@ public interface IGraphicObject
 {
 	// --- methods ---
 	
-	/** Paints object using specified graphics context */
-	public void paint(GC gc);
+	/** Paints object using specified graphics context.
+	 *  If decorations is false, draws ordinary object content.
+	 *  If decorations is true, paints optional "decorations" layer.
+	 */
+	public void paint(GC gc, boolean decorations);
+	
+	/** Returns true if object has decorations to paint. */
+	public boolean hasDecorations();
 	
 	/** Gets model data (if any) associated with this graphic object */
 	public Object getData();

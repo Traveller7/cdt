@@ -230,7 +230,7 @@ public class GraphicObject
 	// --- methods ---
 	
 	/** Invoked to allow element to paint itself on the viewer canvas */
-	public void paint(GC gc) {
+	public void paint(GC gc, boolean decorations) {
 		if (isVisible()) {
 			// Set GC to reflect object properties, if set.
 			Color oldForeground = null;
@@ -245,7 +245,10 @@ public class GraphicObject
 			}
 
 			// Paint the object.
-			paintContent(gc);
+			if (! decorations)
+				paintContent(gc);
+			else
+				paintDecorations(gc);
 
 			// Restore old state.
 			if (m_foreground != null) gc.setForeground(oldForeground);
@@ -271,5 +274,16 @@ public class GraphicObject
 			int height = m_bounds.height - 2; if (height < 0) height = 0;
 			gc.drawRectangle(x,y,width,height);
 		}
+	}
+	
+	/** Returns true if object has decorations to paint. */
+	public boolean hasDecorations() {
+		return false;
+	}
+	
+	/** Invoked to allow element to paint decorations
+	 *  on top of other items drawn on top of it.
+	 */
+	public void paintDecorations(GC gc) {
 	}
 }
