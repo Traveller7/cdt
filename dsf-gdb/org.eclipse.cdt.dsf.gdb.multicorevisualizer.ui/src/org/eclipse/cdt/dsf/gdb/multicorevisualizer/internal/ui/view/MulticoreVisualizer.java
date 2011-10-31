@@ -34,30 +34,20 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 //Eclipse/CDT classes
 import org.eclipse.cdt.dsf.concurrent.ConfinedToDsfExecutor;
 import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
-import org.eclipse.cdt.dsf.concurrent.RequestMonitor;
 import org.eclipse.cdt.dsf.datamodel.DMContexts;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
-import org.eclipse.cdt.dsf.debug.service.IProcesses;
-import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMContext;
-import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMData;
-import org.eclipse.cdt.dsf.debug.service.IRunControl.IContainerDMContext;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.ISuspendedDMEvent;
-import org.eclipse.cdt.dsf.debug.service.command.ICommandControlService.ICommandControlDMContext;
 import org.eclipse.cdt.dsf.gdb.launching.GDBProcess;
 import org.eclipse.cdt.dsf.gdb.launching.GdbLaunch;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCPU;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCore;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerModel;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerThread;
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.DSFDebugModel;
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.DSFDebugModelListener;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.DSFSessionState;
-import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.OnNthDoneMonitor;
-import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.OnDataRequestDoneMonitor;
-import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.OnDoneMonitor;
-import org.eclipse.cdt.dsf.gdb.service.IGDBHardware;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICPUDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICoreDMContext;
-import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.IHardwareTargetDMContext;
-import org.eclipse.cdt.dsf.gdb.service.IGDBProcesses.IGdbThreadDMData;
 import org.eclipse.cdt.dsf.mi.service.IMIExecutionDMContext;
 import org.eclipse.cdt.dsf.mi.service.IMIProcessDMContext;
 import org.eclipse.cdt.dsf.service.DsfServiceEventHandler;
@@ -86,6 +76,7 @@ import org.eclipse.debug.ui.DebugUITools;
  */
 @SuppressWarnings("restriction")
 public class MulticoreVisualizer extends GraphicCanvasVisualizer
+    implements DSFDebugModelListener
 {	
 	// --- constants ---
 	
@@ -340,6 +331,9 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		if (debugContext instanceof IDMVMContext) {
 			setDebugContext((IDMVMContext)debugContext);
 		}
+		else {
+			setDebugContext(null);
+		}
 	}
 
 	/** Sets debug context being displayed by canvas. */
@@ -381,284 +375,139 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	
 	/** Updates visualizer canvas state. */
 	public void update() {
+		// Create new VisualizerModel and hand it to canvas,
+		// TODO: cache the VisualizerModel somehow and update it,
+		// rather than creating it from scratch each time.
 		if (m_sessionState == null) {
 			setCanvasModel(null);
 			return;
 		}
-
-		// Create new VisualizerModel and hand it to canvas,
-		// TODO: cache the VisualizerModel and update it,
-		// rather than creating it from scratch each time.
-		final VisualizerModel model_f = new VisualizerModel();
 		m_sessionState.execute(new DsfRunnable() { public void run() {
-			populateVisualizerModelCPUs(
-				m_sessionState, m_sessionState.getHardwareContext(), model_f, new OnDoneMonitor() {
-					@Override
-					protected void handleCompleted() {
-						model_f.sort();
-						setCanvasModel(model_f);
-					}
-				}
-			);
+			getVisualizerModel();
 		}});
 	}
 	
-	/** Populates CPU layer of visualizer model object using DSF services. */
+	/** Starts visualizer model request.
+	 *  Calls getVisualizerModelDone() with the constructed model.
+	 */
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
-	protected void populateVisualizerModelCPUs(
-		DSFSessionState sessionState, IHardwareTargetDMContext hwContext, VisualizerModel model, RequestMonitor rm)
-	{
-		IGDBHardware hwService = sessionState.getHardwareService();
-		if (hwService == null) {
-			rm.done();
-			return;
-		}
+	public void getVisualizerModel() {
+		VisualizerModel model = new VisualizerModel();
+		DSFDebugModel.getCPUs(m_sessionState, this, model);
+	}
 
-		final DSFSessionState sessionState_f = sessionState;
-		final VisualizerModel model_f = model;
-		final RequestMonitor  rm_f = rm;
-		
-		hwService.getCPUs(hwContext,
-			new OnDataRequestDoneMonitor<ICPUDMContext[]>(rm) {
-				@Override
-				protected void handleCompleted(ICPUDMContext[] cpuContexts) {
-					if (!isSuccess() || cpuContexts == null || cpuContexts.length < 1) {
-						// Unable to get CPU data.
-						// We'll create a single "fake" CPU entry that holds all the cores we find.
-						VisualizerCPU cpu = model_f.addCPU(new VisualizerCPU(0));
-						// Use hardware target as "context" for this fake CPU
-						IHardwareTargetDMContext hwContext = sessionState_f.getHardwareContext();
-						populateVisualizerModelCores(sessionState_f, model_f, hwContext, cpu, rm_f);
-						rm_f.done();
-						return;
-					}
-					
-					// For each CPU, look for its cores.
-					int count = cpuContexts.length;
-					OnNthDoneMonitor nthrm = new OnNthDoneMonitor(count, rm_f);
-					
-					for (int i=0; i<count; ++i) {
-						ICPUDMContext cpuContext = cpuContexts[i];
-						int id = Integer.parseInt(cpuContext.getId());
-						VisualizerCPU cpu = model_f.addCPU(new VisualizerCPU(id));
-						populateVisualizerModelCores(sessionState_f, model_f, cpuContext, cpu, nthrm);
-					}
-				}
-			}
-		);
+	/** Invoked when getModel() request completes. */
+	@ConfinedToDsfExecutor("getSession().getExecutor()")
+	public void getVisualizerModelDone(VisualizerModel model) {
+		model.sort();
+		setCanvasModel(model);
 	}
 	
-	/** Populates CPU layer of visualizer model object using DSF services. */
+	/** Invoked when DSFDebugModel.getCPUs() completes. */
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
-	protected void populateVisualizerModelCores(
-		DSFSessionState sessionState, VisualizerModel model, IDMContext cpuContext, VisualizerCPU cpu, RequestMonitor rm)
+	public void getCPUsDone(ICPUDMContext[] cpuContexts, Object arg)
 	{
-		IGDBHardware hwService = sessionState.getHardwareService();
-		if (hwService == null) {
-			rm.done();
-			return;
+		VisualizerModel model = (VisualizerModel) arg;
+		
+		if (cpuContexts == null || cpuContexts.length == 0) {
+			// Whoops, no CPU data.
+			// We'll fake a CPU and use it to contain any cores we find.
+			model.addCPU(new VisualizerCPU(0));
+			
+			// keep track of CPUs left to visit
+			model.getTodo().add(1);
+			
+			// Collect core data.
+			DSFDebugModel.getCores(m_sessionState, this, model);
+		}
+		else {
+			// keep track of CPUs left to visit
+			int count = cpuContexts.length;
+			model.getTodo().add(count);
+			
+			for (ICPUDMContext cpuContext : cpuContexts) {
+				int cpuID = Integer.parseInt(cpuContext.getId());
+				model.addCPU(new VisualizerCPU(cpuID));
+				
+				// Collect core data.
+				DSFDebugModel.getCores(m_sessionState, cpuContext, this, model);
+			}
+			
+		}
+	}
+
+	
+	/** Invoked when getCores() request completes. */
+	@ConfinedToDsfExecutor("getSession().getExecutor()")
+	public void getCoresDone(ICPUDMContext cpuContext,
+							 ICoreDMContext[] coreContexts,
+							 Object arg)
+	{
+		VisualizerModel model = (VisualizerModel) arg;
+		int cpuID = Integer.parseInt(cpuContext.getId());
+		VisualizerCPU cpu = model.getCPU(cpuID);
+
+		if (coreContexts == null || coreContexts.length == 0) {
+			// no cores for this cpu context
+			// TODO: do we care about this?
+		}
+		else {
+			// keep track of Cores left to visit
+			int count = coreContexts.length;
+			model.getTodo().add(count);
+			
+			for (ICoreDMContext coreContext : coreContexts) {
+				int coreID = Integer.parseInt(coreContext.getId());
+				cpu.addCore(new VisualizerCore(cpu, coreID));
+				
+				// Collect thread data
+				DSFDebugModel.getThreads(m_sessionState, cpuContext, coreContext, this, model);
+			}
+			
+			// keep track of CPUs visited
+			// note: do this _after_ incrementing for cores
+			model.getTodo().done(1);
+		}
+	}
+
+	
+	/** Invoked when getThreads() request completes. */
+	@ConfinedToDsfExecutor("getSession().getExecutor()")
+	public void getThreadsDone(ICPUDMContext  cpuContext,
+							   ICoreDMContext coreContext,
+							   IDMContext[] threadContexts,
+							   Object arg)
+	{
+		VisualizerModel model = (VisualizerModel) arg;
+		int cpuID  = Integer.parseInt(cpuContext.getId());
+		VisualizerCPU  cpu  = model.getCPU(cpuID);
+		int coreID = Integer.parseInt(coreContext.getId());
+		VisualizerCore core = cpu.getCore(coreID);
+		
+		if (threadContexts == null || threadContexts.length == 0) {
+			// no threads for this core
+			// TODO: do we care about this?
+		}
+		else {
+			for (IDMContext threadContext : threadContexts) {
+				IMIExecutionDMContext execContext =
+					DMContexts.getAncestorOfType(threadContext, IMIExecutionDMContext.class);
+				IMIProcessDMContext processContext =
+					DMContexts.getAncestorOfType(execContext, IMIProcessDMContext.class);
+				int pid = Integer.parseInt(processContext.getProcId());
+				int tid = execContext.getThreadId();
+				tid = tid*1000;
+				model.addThread(new VisualizerThread(core, pid, tid));
+			}
+			
 		}
 		
-		final DSFSessionState sessionState_f = sessionState;
-		final VisualizerModel model_f = model;
-		final VisualizerCPU   cpu_f = cpu;
-		final RequestMonitor  rm_f = rm;
-		
-		hwService.getCores(cpuContext,
-			new OnDataRequestDoneMonitor<ICoreDMContext[]>(rm) {
-				@Override
-				protected void handleCompleted(ICoreDMContext[] coreContexts) {
-					if (!isSuccess() || coreContexts == null || coreContexts.length < 1) {
-						// Unable to get any core data for this cpu.
-						// TODO: log this?
-						rm_f.done();
-						return;
-					}
-					
-					// For each core, look for its processes/threads.
-					int count = coreContexts.length;
-					OnNthDoneMonitor nthrm = new OnNthDoneMonitor(count, rm_f);
-					
-					// For each Core, look for its threads.
-					for (ICoreDMContext coreContext : coreContexts) {
-						int id = Integer.parseInt(coreContext.getId());
-						VisualizerCore core = cpu_f.addCore(new VisualizerCore(id));
-						populateVisualizerProcessThreadInfo(sessionState_f, model_f, coreContext, core, nthrm);
-					}
-				}
-			}
-		);
-	}
-	
-
-	//   DSF process/thread/execution hierarchy:
-	//
-	//            MIControlDMContext (ICommandControlDMContext)
-	//                    |
-	//            MIProcessDMContext (IProcess)
-	//              /           \
-	//             /             \
-    //   MIContainerDMContext   MIThreadDMC (IThread)
-	//      (IContainer)         /
-	//             \            /
-    //           MIExecutionDMContext (IExecution)
-	//                    |
-	//             MIStackDMContext / MIExpressionDMContext
-	
-	/** Populates CPU layer of visualizer model object using DSF services. */
-	@ConfinedToDsfExecutor("getSession().getExecutor()")
-	protected void populateVisualizerProcessThreadInfo(
-		DSFSessionState sessionState, VisualizerModel model, ICoreDMContext coreContext, VisualizerCore core, RequestMonitor rm)
-	{
-		// Get control DM context associated with the core
-		// Process/Thread Info service (GDBProcesses_X_Y_Z)
-		IProcesses procService = sessionState.getService(IProcesses.class);
-		// Debugger control context (GDBControlDMContext)
-		ICommandControlDMContext controlContext =
-				DMContexts.getAncestorOfType(coreContext, ICommandControlDMContext.class);
-		if (procService == null || controlContext == null) {
-			rm.done();
-			return;
+		// keep track of Cores visited
+		model.getTodo().done(1);
+		if (model.getTodo().isDone()) {
+			getVisualizerModelDone(model);
 		}
-
-		final ICoreDMContext coreContext_f = coreContext;
-		final VisualizerModel model_f = model;
-		final IProcesses procService_f = procService;
-		final VisualizerCore core_f = core;
-		final RequestMonitor rm_f = rm;
-
-		// Get debugged processes
-		procService_f.getProcessesBeingDebugged(controlContext,
-			new OnDataRequestDoneMonitor<IDMContext[]>(rm) {
-		
-				@Override
-				protected void handleCompleted(IDMContext[] processContexts) {
-					if (!isSuccess() || processContexts == null || processContexts.length < 1) {
-						// Unable to get any process data for this core
-						// Is this an issue? A core may have no processes/threads, right?
-						rm_f.done();
-						return;
-					}
-					
-					int count = processContexts.length;
-					final OnNthDoneMonitor nthrm_f = new OnNthDoneMonitor(count, rm_f);
-					
-					for (IDMContext processContext : processContexts) {
-						IContainerDMContext containerContext =
-							DMContexts.getAncestorOfType(processContext, IContainerDMContext.class);
-						
-						procService_f.getProcessesBeingDebugged(containerContext,
-							new OnDataRequestDoneMonitor<IDMContext[]>(nthrm_f) {
-
-								@Override
-								protected void handleCompleted(IDMContext[] threadContexts) {
-									if (!isSuccess() || threadContexts == null || threadContexts.length < 1) {
-										nthrm_f.done();
-										return;
-									}
-									
-									int count = threadContexts.length;
-									final OnNthDoneMonitor nthrm2_f = new OnNthDoneMonitor(count, nthrm_f);
-									
-									for (IDMContext threadContext : threadContexts) {
-										final IMIExecutionDMContext execContext =
-												DMContexts.getAncestorOfType(threadContext, IMIExecutionDMContext.class);
-										IThreadDMContext threadContext2 =
-												DMContexts.getAncestorOfType(threadContext, IThreadDMContext.class);
-
-										procService_f.getExecutionData(threadContext2, 
-											new OnDataRequestDoneMonitor<IThreadDMData>(nthrm2_f) {
-											
-												@Override
-												protected void handleCompleted(IThreadDMData data) {
-													// Check whether we know about cores
-													if (data instanceof IGdbThreadDMData) {
-														String[] cores = ((IGdbThreadDMData)data).getCores();
-														if (cores != null && cores.length == 1) {
-															if (coreContext_f.getId().equals(cores[0])) {
-																// This thread belongs to the proper core
-																
-																IMIProcessDMContext processContext =
-																	DMContexts.getAncestorOfType(execContext, IMIProcessDMContext.class);
-																int pid = Integer.parseInt(processContext.getProcId());
-																int tid = execContext.getThreadId();
-																model_f.addThread(new VisualizerThread(core_f, pid, tid));
-															}
-														}
-													}
-													nthrm_f.done();
-												}
-											}
-										);
-									}
-								}
-							}
-						);
-					}
-				}
-			}
-		);
 	}
+	
 }
 
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			

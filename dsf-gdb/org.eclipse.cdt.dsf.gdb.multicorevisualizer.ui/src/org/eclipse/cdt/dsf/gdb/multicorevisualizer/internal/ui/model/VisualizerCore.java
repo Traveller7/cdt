@@ -35,15 +35,19 @@ public class VisualizerCore
 {
 	// --- members ---
 	
-	/** CPU ID of this core. */
-	public int m_id;
+	/** CPU this core is part of. */
+	public VisualizerCPU m_cpu = null;
+	
+	/** Linux CPU ID of this core. */
+	public int m_id = 0;
 	
 	
 	// --- constructors/destructors ---
 	
 	/** Constructor */
-	public VisualizerCore(int id)
+	public VisualizerCore(VisualizerCPU cpu, int id)
 	{
+		m_cpu = cpu;
 		m_id = id;
 	}
 	
@@ -55,7 +59,13 @@ public class VisualizerCore
 	
 	// --- accessors ---
 	
-	/** Gets CPU ID of this core. */
+	/** Gets CPU this core is part of. */
+	public VisualizerCPU getCPU()
+	{
+		return m_cpu;
+	}
+
+	/** Gets Linux CPU ID of this core. */
 	public int getID()
 	{
 		return m_id;

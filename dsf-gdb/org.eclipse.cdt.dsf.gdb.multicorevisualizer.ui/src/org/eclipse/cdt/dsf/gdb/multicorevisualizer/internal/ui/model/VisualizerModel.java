@@ -23,6 +23,7 @@ package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model;
 //Java classes
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Hashtable;
 import java.util.List;
 
 //Custom classes
@@ -40,9 +41,15 @@ public class VisualizerModel
 	/** List of cpus (and cores) */
 	protected ArrayList<VisualizerCPU> m_cpus;
 	
+	/** Lookup table for CPUs */
+	protected Hashtable<Integer, VisualizerCPU> m_cpuMap;
+	
 	/** List of threads */
 	protected ArrayList<VisualizerThread> m_threads;
-
+	
+	/** Completion state tracker. */
+	protected Todo m_todo;
+	
 	
 	// --- constructors/destructors ---
 	
@@ -50,7 +57,9 @@ public class VisualizerModel
 	public VisualizerModel()
 	{
 		m_cpus = new ArrayList<VisualizerCPU>();
+		m_cpuMap = new Hashtable<Integer, VisualizerCPU>();
 		m_threads = new ArrayList<VisualizerThread>();
+		m_todo = new Todo();
 	}
 	
 	/** Dispose method */
@@ -60,6 +69,8 @@ public class VisualizerModel
 			for (VisualizerCPU cpu : m_cpus) {
 				cpu.dispose();
 			}
+			m_cpuMap.clear();
+			m_cpuMap = null;
 			m_cpus.clear();
 			m_cpus = null;
 		}
@@ -70,8 +81,19 @@ public class VisualizerModel
 			m_threads.clear();
 			m_threads = null;
 		}
+		if (m_todo != null) {
+			m_todo.dispose();
+			m_todo = null;
+		}
 	}
 	
+	
+	// --- accessors ---
+	
+	/** Gets completion state tracker. */
+	public Todo getTodo() {
+		return m_todo;
+	}
 	
 	// --- methods ---
 	
@@ -92,6 +114,23 @@ public class VisualizerModel
 		return m_cpus.size();
 	}
 	
+	/** Gets CPU with specified ID. */
+	public VisualizerCPU getCPU(int id)
+	{
+		return m_cpuMap.get(id);
+	}
+	
+	/** Gets Core with specified ID. */
+	public VisualizerCore getCore(int id)
+	{
+		VisualizerCore result = null;
+		for (VisualizerCPU cpu: m_cpus) {
+			result = cpu.getCore(id);
+			if (result != null) break;
+		}
+		return result;
+	}
+	
 	/** Gets CPU set. */
 	public List<VisualizerCPU> getCPUs()
 	{
@@ -102,6 +141,7 @@ public class VisualizerModel
 	public VisualizerCPU addCPU(VisualizerCPU cpu)
 	{
 		m_cpus.add(cpu);
+		m_cpuMap.put(cpu.getID(), cpu);
 		return cpu;
 	}
 
@@ -109,6 +149,7 @@ public class VisualizerModel
 	public void removeCPU(VisualizerCPU cpu)
 	{
 		m_cpus.remove(cpu);
+		m_cpuMap.remove(cpu.getID());
 	}
 
 	

@@ -23,6 +23,7 @@ package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model;
 //Java classes
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Hashtable;
 import java.util.List;
 
 //Custom classes
@@ -44,6 +45,9 @@ public class VisualizerCPU
 	/** List of cores */
 	protected ArrayList<VisualizerCore> m_cores;
 	
+	/** Lookup table for cores. */
+	protected Hashtable<Integer, VisualizerCore> m_coreMap;
+	
 	
 	// --- constructors/destructors ---
 	
@@ -52,6 +56,7 @@ public class VisualizerCPU
 	{
 		m_id = id;
 		m_cores = new ArrayList<VisualizerCore>();
+		m_coreMap = new Hashtable<Integer, VisualizerCore>();
 	}
 	
 	/** Dispose method */
@@ -61,6 +66,8 @@ public class VisualizerCPU
 			for (VisualizerCore core : m_cores) {
 				core.dispose();
 			}
+			m_coreMap.clear();
+			m_coreMap = null;
 			m_cores.clear();
 			m_cores = null;
 		}
@@ -75,7 +82,7 @@ public class VisualizerCPU
 		return m_id;
 	}
 	
-
+	
 	// --- methods ---
 	
 	/** Gets number of cores. */
@@ -90,10 +97,17 @@ public class VisualizerCPU
 		return m_cores;
 	}
 	
+	/** Gets core with specified ID. */
+	public VisualizerCore getCore(int id)
+	{
+		return m_coreMap.get(id);
+	}
+	
 	/** Adds core. */
 	public VisualizerCore addCore(VisualizerCore core)
 	{
 		m_cores.add(core);
+		m_coreMap.put(core.getID(), core);
 		return core;
 	}
 
@@ -101,6 +115,7 @@ public class VisualizerCPU
 	public void removeCore(VisualizerCore core)
 	{
 		m_cores.remove(core);
+		m_coreMap.remove(core.getID());
 	}
 
 	

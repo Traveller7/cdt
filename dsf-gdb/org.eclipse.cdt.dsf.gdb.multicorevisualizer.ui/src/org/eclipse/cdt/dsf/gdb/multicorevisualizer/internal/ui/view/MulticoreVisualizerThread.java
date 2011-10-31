@@ -149,7 +149,7 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 			GUIUtils.drawText(gc, "D", x+w, y-8); //$NON-NLS-1$
 			
 			// draw TID
-			String displayTID = Integer.toString(m_tid) + "000"; //$NON-NLS-1$
+			String displayTID = Integer.toString(m_tid);
 			GUIUtils.drawText(gc, displayTID, x + w + 4, y + 2);
 		}
 	}
