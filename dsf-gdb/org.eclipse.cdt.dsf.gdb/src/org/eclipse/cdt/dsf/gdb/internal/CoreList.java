@@ -65,6 +65,7 @@ public class CoreList {
         try {
         	String physicalId = null;
         	String coreId = null;
+        	String cpuCores = null;
         	
             Reader r = new InputStreamReader(new FileInputStream(cpuInfo));
             reader = new BufferedReader(r);
@@ -76,14 +77,25 @@ public class CoreList {
                 	physicalId = line.split(":")[1].trim();  //$NON-NLS-1$
                 } else if (line.startsWith("core id")) { //$NON-NLS-1$
                 	// Found core id of this core which come after the entry
-                	// for physical id, so we have both by now.
+                	// for physical id, so we have both now.
                 	coreId = line.split(":")[1].trim(); //$NON-NLS-1$
-                	coreInfo.add(new CoreInfo(coreId, physicalId));
-                	
-                	// Get ready to look for the next core.
-                	physicalId = null;
-                	coreId = null;
-                }
+	            } else if (line.startsWith("cpu cores")) { //$NON-NLS-1$
+	            	// Found CPU core count which comes after the entry
+	            	// for core id, so we have all three by now.
+	            	cpuCores = line.split(":")[1].trim(); //$NON-NLS-1$
+	            	
+	            	int cid = Integer.parseInt(coreId);
+	            	int pid = Integer.parseInt(physicalId);
+	            	int cores_per_pid = Integer.parseInt(cpuCores);
+	            	String absoluteCoreID = Integer.toString(cid + pid * cores_per_pid);
+	            	
+	            	coreInfo.add(new CoreInfo(absoluteCoreID, physicalId));
+	            	
+	            	// Get ready to look for the next core.
+	            	physicalId = null;
+	            	coreId = null;
+	            	cpuCores = null;
+	            }
             }            
 		} catch (IOException e) {
 		} finally {
