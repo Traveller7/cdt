@@ -496,7 +496,6 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 					DMContexts.getAncestorOfType(execContext, IMIProcessDMContext.class);
 				int pid = Integer.parseInt(processContext.getProcId());
 				int tid = execContext.getThreadId();
-				tid = tid*1000;
 				model.addThread(new VisualizerThread(core, pid, tid));
 			}
 			
