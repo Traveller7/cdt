@@ -364,9 +364,10 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 			if (cpu_size < 0) cpu_size = 0;
 			
 			// Calculate area on each CPU for placing cores.
+			int ncores  = m_cores.size();
 			int cpu_width  = cpu_size - core_margin * 2 + core_separation;
 			int cpu_height = cpu_size - core_margin * 2 + core_separation;
-			int core_edge  = fitSquareItems(ncpus, cpu_width, cpu_height);
+			int core_edge  = fitSquareItems(ncores, cpu_width, cpu_height);
 			int core_size  = core_edge - core_separation;
 			if (core_size < 0) core_size = 0;
 			
