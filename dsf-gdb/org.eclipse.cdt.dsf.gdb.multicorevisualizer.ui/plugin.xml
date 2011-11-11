@@ -49,17 +49,10 @@
    <extension
          point="org.eclipse.cdt.visualizer.ui.visualizer">
 
-      <!-- "Text View" visualizer -->
+     <!-- "Multicore View" visualizer -->
 
       <visualizer
             id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.visualizer"
-            class="org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.MulticoreVisualizer">
-      </visualizer>
-
-      <!-- "Multicore View" visualizer -->
-
-      <visualizer
-            id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.visualizer2"
             class="org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view.MulticoreVisualizer">
       </visualizer>
 
