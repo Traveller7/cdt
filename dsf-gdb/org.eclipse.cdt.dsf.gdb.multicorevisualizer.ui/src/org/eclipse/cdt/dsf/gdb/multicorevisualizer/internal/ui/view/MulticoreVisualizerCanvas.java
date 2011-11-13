@@ -187,10 +187,6 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
         	m_cpus.clear();
         	m_cpus = null;
         }
-        if (m_cpus != null) {
-        	m_cpus.clear();
-        	m_cpus = null;
-        }
         if (m_cpuMap != null) {
         	m_cpuMap.clear();
         	m_cpuMap = null;
