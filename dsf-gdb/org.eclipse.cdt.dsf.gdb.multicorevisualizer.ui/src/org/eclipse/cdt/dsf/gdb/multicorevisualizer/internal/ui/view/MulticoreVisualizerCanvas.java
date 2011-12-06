@@ -65,7 +65,10 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 	/** Canvas update interval in milliseconds. */
 	protected static final int CANVAS_UPDATE_INTERVAL = 100;
 	
+	/** Spacing to allow between threads, when many are displayed on same tile. */
+	protected static final int THREAD_SPACING = 8;
 	
+
 	// --- members ---
 	
 	/** Update timer */
@@ -446,7 +449,7 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 				
 				// how we lay out threads depends on how many there are
 				List<MulticoreVisualizerThread> threads = core.getThreads();
-				int threadheight = MulticoreVisualizerThread.THREAD_SPOT_HEIGHT;
+				int threadheight = MulticoreVisualizerThread.THREAD_SPOT_HEIGHT + THREAD_SPACING;
 				int count = threads.size();
 				int tileheight = bounds.height - 4;
 				int tx = bounds.x + 2;
