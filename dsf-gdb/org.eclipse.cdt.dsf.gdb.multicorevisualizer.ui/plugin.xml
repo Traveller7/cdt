@@ -3,49 +3,9 @@
 <plugin>
 
    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-   <!-- Views                                                                       -->
+   <!-- Visualizer Declarations                                                     -->
    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
-   <!-- Debug Perspective -->
-
-   <extension
-         point="org.eclipse.ui.perspectiveExtensions">
-      <perspectiveExtension
-            targetID="org.eclipse.debug.ui.DebugPerspective">
-            
-         <!-- add Visualizer View in same "slot" as outline view -->
-         <view
-               relative="org.eclipse.ui.views.ContentOutline"
-               visible="true"
-               relationship="stack"
-               id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.view">
-         </view>
-         <viewShortcut
-               id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.view">
-         </viewShortcut>
-      </perspectiveExtension>
-   </extension>
-
-
-   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-   <!-- Visualizer View                                                             -->
-   <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-   <!-- Visualizer "Container" View -->
-
-   <extension
-         point="org.eclipse.ui.views">
-      <view
-            category="org.eclipse.debug.ui"
-            class="org.eclipse.cdt.visualizer.ui.VisualizerView"
-            icon="icons/full/view16/multicorevisualizer_view.gif"
-            id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.view"
-            name="%view.multicoreVisualizer.name">
-      </view>
-   </extension>
-
-   <!-- Visualizer Declarations -->
-   
    <extension
          point="org.eclipse.cdt.visualizer.ui.visualizer">
 
@@ -55,7 +15,6 @@
             id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.visualizer"
             class="org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view.MulticoreVisualizer">
       </visualizer>
-
    </extension>
 
 </plugin>
