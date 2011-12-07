@@ -51,6 +51,6 @@ public class OnDoneMonitor extends RequestMonitor
 	
 	@Override
 	protected void handleCompleted() {
-		
+		super.handleCompleted();
 	}
 }
