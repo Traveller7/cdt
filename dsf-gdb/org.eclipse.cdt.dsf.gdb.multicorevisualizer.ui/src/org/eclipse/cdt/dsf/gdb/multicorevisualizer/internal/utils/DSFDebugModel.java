@@ -1,11 +1,3 @@
-// ===========================================================================
-// DSFDebugModel.java -- Debugger state information accessors.
-// ===========================================================================
-// Copyright (C) 2011, Tilera Corporation. All rights reserved.
-// Use is subject to license terms.
-// ===========================================================================
-
-// NOTE: When we contribute this to CDT, delete above header and use this one:
 /*******************************************************************************
  * Copyright (c) 2011 Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials
@@ -14,15 +6,11 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     William R. Swanson (Tilera Corporation)
+ *     William R. Swanson (Tilera Corporation) - initial API and implementation
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils;
 
-//Java API classes
-
-//Eclipse/CDT classes
 import java.util.ArrayList;
 
 import org.eclipse.cdt.dsf.concurrent.ConfinedToDsfExecutor;
@@ -39,12 +27,6 @@ import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICoreDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.IHardwareTargetDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBProcesses.IGdbThreadDMData;
 
-// custom classes
-
-
-// ---------------------------------------------------------------------------
-// DSFDebugModel
-// ---------------------------------------------------------------------------
 
 /** Debugger state information accessors. */
 public class DSFDebugModel {

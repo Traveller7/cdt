@@ -1,11 +1,3 @@
-// ===========================================================================
-// DSFSessionState.java -- DSF session state object
-// ===========================================================================
-// Copyright (C) 2011, Tilera Corporation. All rights reserved.
-// Use is subject to license terms.
-// ===========================================================================
-
-// NOTE: When we contribute this to CDT, delete above header and use this one:
 /*******************************************************************************
  * Copyright (c) 2011 Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials
@@ -14,18 +6,15 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     William R. Swanson (Tilera Corporation)
+ *     William R. Swanson (Tilera Corporation) - initial API and implementation
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils;
 
-//Java API classes
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 
-//Eclipse/CDT classes
 import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
 import org.eclipse.cdt.dsf.datamodel.DMContexts;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
@@ -35,13 +24,6 @@ import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.IHardwareTargetDMContext;
 import org.eclipse.cdt.dsf.service.DsfServicesTracker;
 import org.eclipse.cdt.dsf.service.DsfSession;
 import org.eclipse.cdt.dsf.ui.viewmodel.datamodel.IDMVMContext;
-
-// custom classes
-
-
-// ---------------------------------------------------------------------------
-// DSFSessionState
-// ---------------------------------------------------------------------------
 
 /**
  * DSF session state object.

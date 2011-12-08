@@ -1,11 +1,3 @@
-// ===========================================================================
-// VisualizerModel.java -- Visualizer framework model object.
-// ===========================================================================
-// Copyright (C) 2011, Tilera Corporation. All rights reserved.
-// Use is subject to license terms.
-// ===========================================================================
-
-// NOTE: When we contribute this to CDT, delete above header and use this one:
 /*******************************************************************************
  * Copyright (c) 2011 Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials
@@ -14,26 +6,20 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     William R. Swanson (Tilera Corporation)
+ *     William R. Swanson (Tilera Corporation) - initial API and implementation
  *******************************************************************************/
 
-// Package declaration
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model;
 
-//Java classes
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 
-//Custom classes
 
-
-//----------------------------------------------------------------------------
-// VisualizerModel
-//----------------------------------------------------------------------------
-
-/** Represents state to display in visualizer. */
+/** 
+ * Class representing the state of the data to display in the MulticoreVisualizer. 
+ */
 public class VisualizerModel
 {
 	// --- members ---
@@ -54,8 +40,7 @@ public class VisualizerModel
 	// --- constructors/destructors ---
 	
 	/** Constructor */
-	public VisualizerModel()
-	{
+	public VisualizerModel() {
 		m_cpus = new ArrayList<VisualizerCPU>();
 		m_cpuMap = new Hashtable<Integer, VisualizerCPU>();
 		m_threads = new ArrayList<VisualizerThread>();
@@ -63,8 +48,7 @@ public class VisualizerModel
 	}
 	
 	/** Dispose method */
-	public void dispose()
-	{
+	public void dispose() {
 		if (m_cpus != null) {
 			for (VisualizerCPU cpu : m_cpus) {
 				cpu.dispose();
@@ -98,8 +82,7 @@ public class VisualizerModel
 	// --- methods ---
 	
 	/** Sorts cores, cpus, etc. by IDs. */
-	public void sort()
-	{
+	public void sort() {
 		Collections.sort(m_cpus);
 		for (VisualizerCPU cpu : m_cpus) cpu.sort();
 		Collections.sort(m_threads);
@@ -109,20 +92,17 @@ public class VisualizerModel
 	// --- core/cpu management ---
 	
 	/** Gets number of CPUs. */
-	public int getCPUCount()
-	{
+	public int getCPUCount() {
 		return m_cpus.size();
 	}
 	
 	/** Gets CPU with specified ID. */
-	public VisualizerCPU getCPU(int id)
-	{
+	public VisualizerCPU getCPU(int id) {
 		return m_cpuMap.get(id);
 	}
 	
 	/** Gets Core with specified ID. */
-	public VisualizerCore getCore(int id)
-	{
+	public VisualizerCore getCore(int id) {
 		VisualizerCore result = null;
 		for (VisualizerCPU cpu: m_cpus) {
 			result = cpu.getCore(id);
@@ -132,30 +112,26 @@ public class VisualizerModel
 	}
 	
 	/** Gets CPU set. */
-	public List<VisualizerCPU> getCPUs()
-	{
+	public List<VisualizerCPU> getCPUs() {
 		return m_cpus;
 	}
 	
 	/** Adds CPU. */
-	public VisualizerCPU addCPU(VisualizerCPU cpu)
-	{
+	public VisualizerCPU addCPU(VisualizerCPU cpu) {
 		m_cpus.add(cpu);
 		m_cpuMap.put(cpu.getID(), cpu);
 		return cpu;
 	}
 
 	/** Removes CPU. */
-	public void removeCPU(VisualizerCPU cpu)
-	{
+	public void removeCPU(VisualizerCPU cpu) {
 		m_cpus.remove(cpu);
 		m_cpuMap.remove(cpu.getID());
 	}
 
 	
 	/** Gets maximum number of cores per CPU. */
-	public int getCoresPerCPU()
-	{
+	public int getCoresPerCPU() {
 		int maxCores = 1;
 		for (VisualizerCPU cpu : m_cpus) {
 			int cores = cpu.getCoreCount();
@@ -168,24 +144,18 @@ public class VisualizerModel
 	// --- thread management ---
 	
 	/** Gets threads. */
-	public List<VisualizerThread> getThreads()
-	{
+	public List<VisualizerThread> getThreads() {
 		return m_threads;
 	}
 	
 	/** Adds thread. */
-	public VisualizerThread addThread(VisualizerThread thread)
-	{
+	public VisualizerThread addThread(VisualizerThread thread) {
 		m_threads.add(thread);
 		return thread;
 	}
 
 	/** Removes thread. */
-	public void removeThread(VisualizerThread thread)
-	{
+	public void removeThread(VisualizerThread thread) {
 		m_threads.remove(thread);
 	}
-
-
-	
 }

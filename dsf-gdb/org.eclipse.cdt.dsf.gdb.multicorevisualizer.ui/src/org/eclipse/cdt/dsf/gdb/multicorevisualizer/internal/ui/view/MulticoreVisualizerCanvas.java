@@ -1,11 +1,3 @@
-// ===========================================================================
-// MulticoreVisualizerCanvas.java -- MulticoreVisualizer canvas
-// ===========================================================================
-// Copyright (C) 2011, Tilera Corporation. All rights reserved.
-// Use is subject to license terms.
-// ===========================================================================
-
-// NOTE: When we contribute this to CDT, delete above header and use this one:
 /*******************************************************************************
  * Copyright (c) 2011 Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials
@@ -14,25 +6,15 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     William R. Swanson (Tilera Corporation)
+ *     William R. Swanson (Tilera Corporation) - initial API and implementation
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view;
 
-//Java API classes
-import java.util.Hashtable;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 
-// SWT/JFace classes
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.widgets.Composite;
-
-// Eclipse/CDT classes
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCPU;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCore;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerModel;
@@ -46,13 +28,12 @@ import org.eclipse.cdt.visualizer.ui.util.Timer;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Composite;
 
-// custom classes
-
-
-// ---------------------------------------------------------------------------
-// MulticoreVisualizerCanvas
-// ---------------------------------------------------------------------------
 
 /**
  * MulticoreVisualizer's display canvas.

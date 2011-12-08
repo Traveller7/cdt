@@ -1,11 +1,3 @@
-// ===========================================================================
-// VisualizerThread.java -- Visualizer framework model object.
-// ===========================================================================
-// Copyright (C) 2011, Tilera Corporation. All rights reserved.
-// Use is subject to license terms.
-// ===========================================================================
-
-// NOTE: When we contribute this to CDT, delete above header and use this one:
 /*******************************************************************************
  * Copyright (c) 2011 Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials
@@ -14,20 +6,10 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     William R. Swanson (Tilera Corporation)
+ *     William R. Swanson (Tilera Corporation) - initial API and implementation
  *******************************************************************************/
 
-// Package declaration
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model;
-
-// Java classes
-
-// Custom classes
-
-
-//----------------------------------------------------------------------------
-// IVisualizer
-//----------------------------------------------------------------------------
 
 /** Represents single thread. */
 public class VisualizerThread

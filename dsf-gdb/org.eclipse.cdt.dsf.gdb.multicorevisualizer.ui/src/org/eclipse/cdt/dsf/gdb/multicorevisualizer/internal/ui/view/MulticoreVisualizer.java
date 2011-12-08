@@ -1,11 +1,3 @@
-// ===========================================================================
-// MulticoreVisualizer.java -- Grid View Visualizer
-// ===========================================================================
-// Copyright (C) 2011, Tilera Corporation. All rights reserved.
-// Use is subject to license terms.
-// ===========================================================================
-
-// NOTE: When we contribute this to CDT, delete above header and use this one:
 /*******************************************************************************
  * Copyright (c) 2011 Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials
@@ -14,28 +6,18 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     William R. Swanson (Tilera Corporation)
+ *     William R. Swanson (Tilera Corporation) - initial API and implementation
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view;
 
-//Java API classes
-//import java.util.*;
 
-// SWT/JFace classes
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.jface.action.IMenuManager;
-import org.eclipse.jface.action.IToolBarManager;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
-
-//Eclipse/CDT classes
 import org.eclipse.cdt.dsf.concurrent.ConfinedToDsfExecutor;
 import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
 import org.eclipse.cdt.dsf.datamodel.DMContexts;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
+import org.eclipse.cdt.dsf.debug.service.IRunControl.IExitedDMEvent;
+import org.eclipse.cdt.dsf.debug.service.IRunControl.IStartedDMEvent;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.ISuspendedDMEvent;
 import org.eclipse.cdt.dsf.gdb.launching.GDBProcess;
 import org.eclipse.cdt.dsf.gdb.launching.GdbLaunch;
@@ -60,19 +42,18 @@ import org.eclipse.cdt.visualizer.ui.util.GUIUtils;
 import org.eclipse.cdt.visualizer.ui.util.SelectionUtils;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.debug.ui.DebugUITools;
-
-// custom classes
-
-
-// ---------------------------------------------------------------------------
-// GridViewer
-// ---------------------------------------------------------------------------
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Composite;
 
 /**
- * The Grid View Visualizer, the Tilera IDE's graphic representation
- * of the state of the Tilera chip.
+ * The Multicore Visualizer is a generic visualizer that displays
+ * CPUs, cores, threads graphically.
  * 
- * This view uses the CDT Visualizer framework.
+ * This visualizer uses the CDT Visualizer framework.
  */
 @SuppressWarnings("restriction")
 public class MulticoreVisualizer extends GraphicCanvasVisualizer
@@ -362,6 +343,19 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		update();
 	}
 	
+	/** Invoked when a thread or process starts. */
+	@DsfServiceEventHandler
+	public void handleEvent(IStartedDMEvent event) {
+		// Update to show latest state.
+		update();
+	}
+	
+	/** Invoked when a thread or process exits. */
+	@DsfServiceEventHandler
+	public void handleEvent(IExitedDMEvent event) {
+		// Update to show latest state.
+		update();
+	}
 	
 	// --- Update methods ---
 	

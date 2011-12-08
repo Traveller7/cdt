@@ -1,11 +1,3 @@
-// ===========================================================================
-// MulticoreVisualizerCore.java -- MulticoreVisualizer CPU core object
-// ===========================================================================
-// Copyright (C) 2011, Tilera Corporation. All rights reserved.
-// Use is subject to license terms.
-// ===========================================================================
-
-// NOTE: When we contribute this to CDT, delete above header and use this one:
 /*******************************************************************************
  * Copyright (c) 2011 Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials
@@ -14,31 +6,18 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     William R. Swanson (Tilera Corporation)
+ *     William R. Swanson (Tilera Corporation) - initial API and implementation
  *******************************************************************************/
 
 // package declaration
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view;
 
-// Java API classes
-//import java.util.*;
-
-// SWT/JFace classes
-import org.eclipse.swt.graphics.GC;
-
-// Eclipse/CDT classes
 import org.eclipse.cdt.visualizer.ui.util.Colors;
 import org.eclipse.cdt.visualizer.ui.util.GUIUtils;
-
-// custom classes
-
-
-// ---------------------------------------------------------------------------
-// MulticoreVisualizerCPU
-// ---------------------------------------------------------------------------
+import org.eclipse.swt.graphics.GC;
 
 /**
- * MulticoreVisualizer CPU core object.
+ * MulticoreVisualizer Thread object.
  */
 public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 {
