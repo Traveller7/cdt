@@ -25,21 +25,16 @@ public class VisualizerThread
 	
 	/** Thread ID (tid). */
 	public int m_tid;
-	
-	
-	// --- constructors/destructors ---
-	
+		
 	/** Constructor */
-	public VisualizerThread(VisualizerCore core, int pid, int tid)
-	{
+	public VisualizerThread(VisualizerCore core, int pid, int tid) {
 		m_core = core;
 		m_pid = pid;
 		m_tid = tid;
 	}
 	
 	/** Dispose method */
-	public void dispose()
-	{
+	public void dispose() {
 		m_core = null;
 	}
 	
@@ -47,20 +42,17 @@ public class VisualizerThread
 	// --- accessors ---
 	
 	/** Gets core. */
-	public VisualizerCore getCore()
-	{
+	public VisualizerCore getCore()	{
 		return m_core;
 	}
 	
 	/** Gets process id (pid). */
-	public int getPID()
-	{
-		return m_tid;
+	public int getPID() {
+		return m_pid;
 	}
 	
 	/** Gets thread id (tid). */
-	public int getTID()
-	{
+	public int getTID()	{
 		return m_tid;
 	}
 
@@ -89,5 +81,12 @@ public class VisualizerThread
 			}
 		}
 		return result;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuffer output = new StringBuffer();
+		output.append(m_core).append(",Proc:").append(m_pid).append(",Thread:").append(m_tid);  //$NON-NLS-1$//$NON-NLS-2$
+		return output.toString();
 	}
 }

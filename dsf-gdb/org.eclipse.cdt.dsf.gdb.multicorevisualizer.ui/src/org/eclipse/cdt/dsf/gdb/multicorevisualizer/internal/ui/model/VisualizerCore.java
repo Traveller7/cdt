@@ -27,29 +27,25 @@ public class VisualizerCore
 	// --- constructors/destructors ---
 	
 	/** Constructor */
-	public VisualizerCore(VisualizerCPU cpu, int id)
-	{
+	public VisualizerCore(VisualizerCPU cpu, int id) {
 		m_cpu = cpu;
 		m_id = id;
 	}
 	
 	/** Dispose method */
-	public void dispose()
-	{
+	public void dispose() {
 	}
 	
 	
 	// --- accessors ---
 	
 	/** Gets CPU this core is part of. */
-	public VisualizerCPU getCPU()
-	{
+	public VisualizerCPU getCPU() {
 		return m_cpu;
 	}
 
 	/** Gets Linux CPU ID of this core. */
-	public int getID()
-	{
+	public int getID() {
 		return m_id;
 	}
 
@@ -74,4 +70,8 @@ public class VisualizerCore
 		return result;
 	}
 	
+	@Override
+	public String toString() {
+		return m_cpu + ",Core:" + m_id; //$NON-NLS-1$
+	}
 }

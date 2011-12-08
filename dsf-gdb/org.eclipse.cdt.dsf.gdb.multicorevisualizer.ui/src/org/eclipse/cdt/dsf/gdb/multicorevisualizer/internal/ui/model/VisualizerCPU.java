@@ -39,16 +39,14 @@ public class VisualizerCPU
 	// --- constructors/destructors ---
 	
 	/** Constructor */
-	public VisualizerCPU(int id)
-	{
+	public VisualizerCPU(int id) {
 		m_id = id;
 		m_cores = new ArrayList<VisualizerCore>();
 		m_coreMap = new Hashtable<Integer, VisualizerCore>();
 	}
 	
 	/** Dispose method */
-	public void dispose()
-	{
+	public void dispose() {
 		if (m_cores != null) {
 			for (VisualizerCore core : m_cores) {
 				core.dispose();
@@ -64,8 +62,7 @@ public class VisualizerCPU
 	// --- accessors ---
 	
 	/** Gets ID of this CPU. */
-	public int getID()
-	{
+	public int getID() {
 		return m_id;
 	}
 	
@@ -73,42 +70,36 @@ public class VisualizerCPU
 	// --- methods ---
 	
 	/** Gets number of cores. */
-	public int getCoreCount()
-	{
+	public int getCoreCount() {
 		return m_cores.size();
 	}
 	
 	/** Gets cores. */
-	public List<VisualizerCore> getCores()
-	{
+	public List<VisualizerCore> getCores() {
 		return m_cores;
 	}
 	
 	/** Gets core with specified ID. */
-	public VisualizerCore getCore(int id)
-	{
+	public VisualizerCore getCore(int id) {
 		return m_coreMap.get(id);
 	}
 	
 	/** Adds core. */
-	public VisualizerCore addCore(VisualizerCore core)
-	{
+	public VisualizerCore addCore(VisualizerCore core) {
 		m_cores.add(core);
 		m_coreMap.put(core.getID(), core);
 		return core;
 	}
 
 	/** Removes core. */
-	public void removeCore(VisualizerCore core)
-	{
+	public void removeCore(VisualizerCore core) {
 		m_cores.remove(core);
 		m_coreMap.remove(core.getID());
 	}
 
 	
 	/** Sorts cores, cpus, etc. by IDs. */
-	public void sort()
-	{
+	public void sort() {
 		Collections.sort(m_cores);
 	}
 
@@ -127,5 +118,10 @@ public class VisualizerCPU
 			}
 		}
 		return result;
+	}
+	
+	@Override
+	public String toString() {
+		return "CPU:" + m_id; //$NON-NLS-1$
 	}
 }
