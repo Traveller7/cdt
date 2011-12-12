@@ -14,6 +14,9 @@ package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils;
 import java.util.ArrayList;
 
 import org.eclipse.cdt.dsf.concurrent.ConfinedToDsfExecutor;
+import org.eclipse.cdt.dsf.concurrent.ImmediateCountingRequestMonitor;
+import org.eclipse.cdt.dsf.concurrent.ImmediateDataRequestMonitor;
+import org.eclipse.cdt.dsf.concurrent.ImmediateRequestMonitor;
 import org.eclipse.cdt.dsf.datamodel.DMContexts;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
 import org.eclipse.cdt.dsf.debug.service.IProcesses;
@@ -49,9 +52,10 @@ public class DSFDebugModel {
 		
 		IHardwareTargetDMContext contextToUse = sessionState.getHardwareContext();
 		hwService.getCPUs(contextToUse,
-			new OnDataRequestDoneMonitor<ICPUDMContext[]>() {
+			new ImmediateDataRequestMonitor<ICPUDMContext[]>() {
 				@Override
-				protected void handleCompleted(ICPUDMContext[] cpuContexts) {
+				protected void handleCompleted() {
+					ICPUDMContext[] cpuContexts = getData();
 					if (! isSuccess()) cpuContexts = null;
 					listener_f.getCPUsDone(cpuContexts, arg_f);
 				}
@@ -95,9 +99,11 @@ public class DSFDebugModel {
 		}
 		
 		hwService.getCores(contextToUse,
-			new OnDataRequestDoneMonitor<ICoreDMContext[]>() {
+			new ImmediateDataRequestMonitor<ICoreDMContext[]>() {
 				@Override
-				protected void handleCompleted(ICoreDMContext[] coreContexts) {
+				protected void handleCompleted() {
+					ICoreDMContext[] coreContexts = getData();
+
 					if (! isSuccess()) coreContexts = null;
 					listener_f.getCoresDone(cpuContext_f, coreContexts, arg_f);
 				}
@@ -133,10 +139,12 @@ public class DSFDebugModel {
 		
 		// Get debugged processes
 		procService_f.getProcessesBeingDebugged(controlContext,
-			new OnDataRequestDoneMonitor<IDMContext[]>(null) {
+			new ImmediateDataRequestMonitor<IDMContext[]>() {
 		
 				@Override
-				protected void handleCompleted(IDMContext[] processContexts) {
+				protected void handleCompleted() {
+					IDMContext[] processContexts = getData();
+				
 					if (!isSuccess() || processContexts == null || processContexts.length < 1) {
 						// Unable to get any process data for this core
 						// Is this an issue? A core may have no processes/threads, right?
@@ -147,9 +155,8 @@ public class DSFDebugModel {
 					final ArrayList<IDMContext> threadContexts_f =
 							new ArrayList<IDMContext>();
 				
-					int count = processContexts.length;
-					final OnNthDoneMonitor nthrm_f = new OnNthDoneMonitor(count,
-						new OnDoneMonitor() {
+					final ImmediateCountingRequestMonitor nthrm_f = new ImmediateCountingRequestMonitor(
+						new ImmediateRequestMonitor() {
 							@Override
 							protected void handleCompleted() {
 								IDMContext[] threadContexts = new IDMContext[threadContexts_f.size()];
@@ -157,23 +164,26 @@ public class DSFDebugModel {
 								listener_f.getThreadsDone(cpuContext_f, coreContext_f, threadContexts, arg_f);
 							}
 						});
+					nthrm_f.setDoneCount(processContexts.length);
 					
 					for (IDMContext processContext : processContexts) {
 						IContainerDMContext containerContext =
 							DMContexts.getAncestorOfType(processContext, IContainerDMContext.class);
 						
 						procService_f.getProcessesBeingDebugged(containerContext,
-							new OnDataRequestDoneMonitor<IDMContext[]>(nthrm_f) {
+							new ImmediateDataRequestMonitor<IDMContext[]>(nthrm_f) {
 
 								@Override
-								protected void handleCompleted(IDMContext[] threadContexts) {
+								protected void handleCompleted() {
+									IDMContext[] threadContexts = getData();
+									
 									if (!isSuccess() || threadContexts == null || threadContexts.length < 1) {
 										nthrm_f.done();
 										return;
 									}
 									
-									int count = threadContexts.length;
-									final OnNthDoneMonitor nthrm2_f = new OnNthDoneMonitor(count, nthrm_f);
+									final ImmediateCountingRequestMonitor nthrm2_f = new ImmediateCountingRequestMonitor(nthrm_f);
+									nthrm2_f.setDoneCount(threadContexts.length);
 									
 									for (IDMContext threadContext : threadContexts) {
 										final IDMContext threadContext_f = threadContext;
@@ -181,12 +191,14 @@ public class DSFDebugModel {
 												DMContexts.getAncestorOfType(threadContext, IThreadDMContext.class);
 
 										procService_f.getExecutionData(threadContext2, 
-											new OnDataRequestDoneMonitor<IThreadDMData>(nthrm2_f) {
+											new ImmediateDataRequestMonitor<IThreadDMData>(nthrm2_f) {
 											
 												@Override
-												protected void handleCompleted(IThreadDMData data) {
+												protected void handleCompleted() {
+													IThreadDMData data = getData();
+
 													// Check whether we know about cores
-													if (data instanceof IGdbThreadDMData) {
+													if (data != null && data instanceof IGdbThreadDMData) {
 														String[] cores = ((IGdbThreadDMData)data).getCores();
 														if (cores != null && cores.length == 1) {
 															if (coreContext_f.getId().equals(cores[0])) {
