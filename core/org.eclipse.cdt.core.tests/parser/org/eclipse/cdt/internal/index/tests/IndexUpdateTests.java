@@ -6,7 +6,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *    Markus Schorn - initial API and implementation
+ *     Markus Schorn - initial API and implementation
  *******************************************************************************/ 
 package org.eclipse.cdt.internal.index.tests;
 
@@ -59,7 +59,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
 
 public class IndexUpdateTests extends IndexTestBase {
-
 	private static final String EXPLICIT = "explicit";
 	private static final String VIRTUAL = "virtual";
 	private static final String PURE_VIRTUAL= "pure-virtual";
@@ -82,9 +81,9 @@ public class IndexUpdateTests extends IndexTestBase {
 		return suite;
 	}
 
-	private ICProject fCppProject= null;
-	private ICProject fCProject= null;
-	private IIndex fIndex= null;
+	private ICProject fCppProject;
+	private ICProject fCProject;
+	private IIndex fIndex;
 	private CharSequence[] fContents;
 	private IFile fFile;
 	private IFile fHeader;
@@ -1285,7 +1284,7 @@ public class IndexUpdateTests extends IndexTestBase {
 		setupFile(2, true);
 		long id1, id2;
 		fIndex.acquireReadLock();
-		try { 
+		try {
 			final IIndexBinding binding = findBinding("X");
 			id1= ((PDOMFile) binding.getLocalToFile()).getRecord();
 		} finally {
@@ -1294,7 +1293,7 @@ public class IndexUpdateTests extends IndexTestBase {
 		
 		updateFile();
 		fIndex.acquireReadLock();
-		try { 
+		try {
 			final IIndexBinding binding = findBinding("X");
 			id2= ((PDOMFile) binding.getLocalToFile()).getRecord();
 		} finally {
@@ -1432,5 +1431,34 @@ public class IndexUpdateTests extends IndexTestBase {
 			fIndex.releaseReadLock();
 		}
 	}
+	
+	// struct S {};
+	
+	// struct S {S(int){}};
+	public void testImplicitDefaultCtor_Bug359376() throws Exception {
+		setupFile(2, true);
+		fIndex.acquireReadLock();
+		try { 
+			final ICPPClassType s = (ICPPClassType) findBinding("S");
+			assertNotNull(s);
+			final ICPPConstructor[] ctors = s.getConstructors();
+			assertEquals(2, ctors.length); // 2 implicit ctors
+			assertTrue(ctors[0].isImplicit());
+			assertTrue(ctors[1].isImplicit());
+		} finally {
+			fIndex.releaseReadLock();
+		}
+		updateFile();
+		
+		fIndex.acquireReadLock();
+		try { 
+			final ICPPClassType s = (ICPPClassType) findBinding("S");
+			assertNotNull(s);
+			final ICPPConstructor[] ctors = s.getConstructors();
+			assertEquals(2, ctors.length); // 1 explicit and one implicit ctor
+			assertTrue(ctors[0].isImplicit() != ctors[1].isImplicit());
+		} finally {
+			fIndex.releaseReadLock();
+		}
+	}
 }
-
