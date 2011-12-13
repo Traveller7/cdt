@@ -16,9 +16,6 @@ import org.eclipse.cdt.dsf.concurrent.ConfinedToDsfExecutor;
 import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
 import org.eclipse.cdt.dsf.datamodel.DMContexts;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
-import org.eclipse.cdt.dsf.debug.service.IRunControl.IExitedDMEvent;
-import org.eclipse.cdt.dsf.debug.service.IRunControl.IStartedDMEvent;
-import org.eclipse.cdt.dsf.debug.service.IRunControl.ISuspendedDMEvent;
 import org.eclipse.cdt.dsf.gdb.launching.GDBProcess;
 import org.eclipse.cdt.dsf.gdb.launching.GdbLaunch;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCPU;
@@ -32,7 +29,6 @@ import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICPUDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICoreDMContext;
 import org.eclipse.cdt.dsf.mi.service.IMIExecutionDMContext;
 import org.eclipse.cdt.dsf.mi.service.IMIProcessDMContext;
-import org.eclipse.cdt.dsf.service.DsfServiceEventHandler;
 import org.eclipse.cdt.dsf.ui.viewmodel.datamodel.IDMVMContext;
 import org.eclipse.cdt.visualizer.ui.canvas.GraphicCanvas;
 import org.eclipse.cdt.visualizer.ui.canvas.GraphicCanvasVisualizer;
@@ -67,11 +63,19 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	
 	// --- members ---
 	
+	/**
+	 * The data model drawn by this visualizer.
+	 */
+	private VisualizerModel fDataModel;
+
 	/** Downcast reference to canvas. */
-	protected MulticoreVisualizerCanvas m_canvas = null;
+	protected MulticoreVisualizerCanvas m_canvas;
 	
 	/** DSF debug context session object. */
-	protected DSFSessionState m_sessionState = null;
+	protected DSFSessionState m_sessionState;
+	
+	/** Event listener class for DSF events */
+	protected MulticoreVisualizerEventListener fEventListener;
 	
 
 	// --- constructors/destructors ---
@@ -98,8 +102,8 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	
 	/** Invoked when visualizer is created, to permit any initialization. */
 	@Override
-	public void initializeVisualizer()
-	{
+	public void initializeVisualizer() {
+		fEventListener = new MulticoreVisualizerEventListener(this);
 	}
 	
 	/** Invoked when visualizer is disposed, to permit any cleanup. */
@@ -176,6 +180,10 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		return (MulticoreVisualizerCanvas) getCanvas();
 	}
 	
+	/** Return the data model backing this multicore visualizer */
+	public VisualizerModel getModel() {
+		return fDataModel;
+	}
 	
 	// --- action management ---
 
@@ -327,7 +335,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		}
 		if (vmContext != null) {
 			m_sessionState = new DSFSessionState(vmContext);
-			m_sessionState.addServiceEventListener(this);
+			m_sessionState.addServiceEventListener(fEventListener);
 			changed = true;
 		}
 		if (changed) update();
@@ -336,27 +344,6 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	
 	// --- DSF Event Handlers ---
 
-	/** Invoked when current debug session is suspended. */
-	@DsfServiceEventHandler
-	public void handleEvent(ISuspendedDMEvent event) {
-		// Update to show latest state.
-		update();
-	}
-	
-	/** Invoked when a thread or process starts. */
-	@DsfServiceEventHandler
-	public void handleEvent(IStartedDMEvent event) {
-		// Update to show latest state.
-		update();
-	}
-	
-	/** Invoked when a thread or process exits. */
-	@DsfServiceEventHandler
-	public void handleEvent(IExitedDMEvent event) {
-		// Update to show latest state.
-		update();
-	}
-	
 	// --- Update methods ---
 	
 	/** Sets canvas model. */
@@ -386,8 +373,8 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	 */
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public void getVisualizerModel() {
-		VisualizerModel model = new VisualizerModel();
-		DSFDebugModel.getCPUs(m_sessionState, this, model);
+		fDataModel = new VisualizerModel();
+		DSFDebugModel.getCPUs(m_sessionState, this, fDataModel);
 	}
 
 	/** Invoked when getModel() request completes. */

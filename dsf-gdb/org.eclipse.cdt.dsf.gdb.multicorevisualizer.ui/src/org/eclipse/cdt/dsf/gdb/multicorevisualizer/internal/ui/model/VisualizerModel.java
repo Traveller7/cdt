@@ -14,6 +14,7 @@ package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 
 
@@ -157,5 +158,21 @@ public class VisualizerModel
 	/** Removes thread. */
 	public void removeThread(VisualizerThread thread) {
 		m_threads.remove(thread);
+	}
+
+	/** 
+	 * Removes thread by threadId.
+	 * Since thread ids are unique accross a GDB session,
+	 * we can uniquely find a thread based on its id.
+	 */
+	public void removeThread(int threadId) {
+		Iterator<VisualizerThread> itr = m_threads.iterator();
+		while (itr.hasNext()) {
+			VisualizerThread thread = itr.next();
+			if (thread.getTID() == threadId) {
+				itr.remove();
+				break;
+			}
+		}
 	}
 }
