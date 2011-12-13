@@ -23,6 +23,7 @@ import org.eclipse.cdt.dsf.debug.service.IProcesses;
 import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMContext;
 import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMData;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.IContainerDMContext;
+import org.eclipse.cdt.dsf.debug.service.command.ICommandControlService;
 import org.eclipse.cdt.dsf.debug.service.command.ICommandControlService.ICommandControlDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICPUDMContext;
@@ -44,13 +45,15 @@ public class DSFDebugModel {
 		final DSFDebugModelListener listener_f = listener;
 		final Object arg_f                     = arg;
 		
-		IGDBHardware hwService = sessionState.getHardwareService();
-		if (hwService == null) {
+		ICommandControlService controlService = sessionState.getService(ICommandControlService.class);
+		IGDBHardware hwService = sessionState.getService(IGDBHardware.class);
+		if (controlService == null || hwService == null) {
 			listener_f.getCPUsDone(null, arg_f);
 			return;
 		}
 		
-		IHardwareTargetDMContext contextToUse = sessionState.getHardwareContext();
+		IHardwareTargetDMContext contextToUse = DMContexts.getAncestorOfType(controlService.getContext(),
+                                                                             IHardwareTargetDMContext.class);
 		hwService.getCPUs(contextToUse,
 			new ImmediateDataRequestMonitor<ICPUDMContext[]>() {
 				@Override
@@ -85,7 +88,7 @@ public class DSFDebugModel {
 		final DSFDebugModelListener listener_f = listener;
 		final Object arg_f                     = arg;
 		
-		IGDBHardware hwService = sessionState.getHardwareService();
+		IGDBHardware hwService = sessionState.getService(IGDBHardware.class);
 		if (hwService == null) {
 			listener_f.getCoresDone(cpuContext, null, arg_f);
 			return;
@@ -95,7 +98,10 @@ public class DSFDebugModel {
 		if (contextToUse == null) {
 			// if caller doesn't supply a specific cpu context,
 			// use the hardware context (so we get all available cores?)
-			contextToUse = sessionState.getHardwareContext();
+			ICommandControlService controlService = sessionState.getService(ICommandControlService.class);
+			contextToUse = DMContexts.getAncestorOfType(controlService.getContext(),
+                                                        IHardwareTargetDMContext.class);
+
 		}
 		
 		hwService.getCores(contextToUse,

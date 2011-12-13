@@ -15,12 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 
+import org.eclipse.cdt.dsf.concurrent.ConfinedToDsfExecutor;
 import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
-import org.eclipse.cdt.dsf.datamodel.DMContexts;
-import org.eclipse.cdt.dsf.datamodel.IDMContext;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.MulticoreVisualizerUIPlugin;
-import org.eclipse.cdt.dsf.gdb.service.IGDBHardware;
-import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.IHardwareTargetDMContext;
 import org.eclipse.cdt.dsf.service.DsfServicesTracker;
 import org.eclipse.cdt.dsf.service.DsfSession;
 import org.eclipse.cdt.dsf.ui.viewmodel.datamodel.IDMVMContext;
@@ -44,21 +41,17 @@ public class DSFSessionState
 	/** Services tracker, used to access services. */
 	protected DsfServicesTracker m_servicesTracker;
 
-	/** Current hardware target context. */
-	protected volatile IHardwareTargetDMContext m_hardwareTargetContext;
-	
-	
 	// --- constructors/destructors ---
 	
 	/** Constructor. */
-	public DSFSessionState(IDMVMContext vmContext)
-	{
-		IDMContext dmContext = vmContext.getDMContext();
-		m_sessionId = dmContext.getSessionId();
+	public DSFSessionState(IDMVMContext vmContext) {
+		this(vmContext.getDMContext().getSessionId());
+	}
+	
+	public DSFSessionState(String sessionId) {
+		m_sessionId = sessionId;
 		m_sessionListeners = new ArrayList<Object>();
 		m_servicesTracker = new DsfServicesTracker(MulticoreVisualizerUIPlugin.getBundleContext(), m_sessionId);
-		
-		m_hardwareTargetContext = DMContexts.getAncestorOfType(dmContext, IHardwareTargetDMContext.class);
 	}
 	
 	/** Dispose method. */
@@ -74,8 +67,6 @@ public class DSFSessionState
 			m_servicesTracker.dispose();				
 			m_servicesTracker = null;
 		}
-		
-		m_hardwareTargetContext = null;
 	}
 	
 	
@@ -176,23 +167,8 @@ public class DSFSessionState
 	}
 	
 	/** Gets service of the specified type. */
+	@ConfinedToDsfExecutor("getDsfSession().getExecutor()")
 	public <V> V getService(Class<V> serviceClass) {
 		return (m_servicesTracker == null) ? null : m_servicesTracker.getService(serviceClass);
-	}
-	
-	
-	// --- hardware service methods ---
-	
-	// TODO: maybe these belong in a subclass?
-	
-	/** Gets hardware target context. */
-	public IHardwareTargetDMContext getHardwareContext()
-	{
-		return m_hardwareTargetContext;
-	}
-	
-	/** Gets IGDBHardware service. */
-	public IGDBHardware getHardwareService() {
-		return getService(IGDBHardware.class);
 	}
 }

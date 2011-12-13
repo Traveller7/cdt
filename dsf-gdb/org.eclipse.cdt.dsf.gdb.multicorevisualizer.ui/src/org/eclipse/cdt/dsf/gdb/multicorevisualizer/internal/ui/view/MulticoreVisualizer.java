@@ -37,6 +37,7 @@ import org.eclipse.cdt.visualizer.ui.util.Colors;
 import org.eclipse.cdt.visualizer.ui.util.GUIUtils;
 import org.eclipse.cdt.visualizer.ui.util.SelectionUtils;
 import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.ui.DebugUITools;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
@@ -269,9 +270,6 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 			result = 0;
 		}
 		
-		// HACK: for now, we handle anything
-		result = 2;
-		
 		return result;
 	}
 	
@@ -316,25 +314,32 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	/** Updates debug context being displayed by canvas. */
 	public void updateDebugContext()
 	{
+		String sessionId = null;
 		IAdaptable debugContext = DebugUITools.getDebugContext();
 		if (debugContext instanceof IDMVMContext) {
-			setDebugContext((IDMVMContext)debugContext);
+			sessionId = ((IDMVMContext)debugContext).getDMContext().getSessionId();
+		} else if (debugContext instanceof GdbLaunch) {
+			sessionId = ((GdbLaunch)debugContext).getSession().getId();
+		} else if (debugContext instanceof GDBProcess) {
+			ILaunch launch = ((GDBProcess)debugContext).getLaunch();
+			if (launch instanceof GdbLaunch) {
+				sessionId = ((GdbLaunch)launch).getSession().getId();
+			}
 		}
-		else {
-			setDebugContext(null);
-		}
+
+		setDebugSession(sessionId);
 	}
 
 	/** Sets debug context being displayed by canvas. */
-	public void setDebugContext(IDMVMContext vmContext) {
+	public void setDebugSession(String sessionId) {
 		boolean changed = false;
 		if (m_sessionState != null) {
 			m_sessionState.dispose();
 			m_sessionState = null;
 			changed = true;
 		}
-		if (vmContext != null) {
-			m_sessionState = new DSFSessionState(vmContext);
+		if (sessionId != null) {
+			m_sessionState = new DSFSessionState(sessionId);
 			m_sessionState.addServiceEventListener(fEventListener);
 			changed = true;
 		}
