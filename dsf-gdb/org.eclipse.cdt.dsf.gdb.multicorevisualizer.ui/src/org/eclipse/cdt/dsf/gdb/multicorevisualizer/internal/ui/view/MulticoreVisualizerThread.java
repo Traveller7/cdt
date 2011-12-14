@@ -99,13 +99,13 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 	private Color getThreadStateColor() {
 		switch (m_state) {
 		case RUNNING:
-			return Colors.GREEN;
+			return IMulticoreVisualizerConstants.COLOR_RUNNING_THREAD;
 		case SUSPENDED:
-			return Colors.YELLOW;
+			return IMulticoreVisualizerConstants.COLOR_SUSPENDED_THREAD;
 		case CRASHED:
-			return Colors.RED;
+			return IMulticoreVisualizerConstants.COLOR_CRASHED_THREAD;
 		case EXITED:
-			return Colors.GRAY;
+			return IMulticoreVisualizerConstants.COLOR_EXITED_THREAD;
 		}
 		
 		assert false;
