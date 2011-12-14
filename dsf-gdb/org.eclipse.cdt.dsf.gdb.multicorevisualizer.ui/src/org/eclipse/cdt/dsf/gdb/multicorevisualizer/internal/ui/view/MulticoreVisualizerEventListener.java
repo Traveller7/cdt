@@ -20,10 +20,12 @@ import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMContext;
 import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMData;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.IContainerDMContext;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.IExitedDMEvent;
+import org.eclipse.cdt.dsf.debug.service.IRunControl.IResumedDMEvent;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.IStartedDMEvent;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.ISuspendedDMEvent;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.MulticoreVisualizerUIPlugin;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCore;
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerExecutionState;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerThread;
 import org.eclipse.cdt.dsf.gdb.service.IGDBProcesses.IGdbThreadDMData;
 import org.eclipse.cdt.dsf.mi.service.IMIExecutionDMContext;
@@ -44,13 +46,47 @@ public class MulticoreVisualizerEventListener {
 		fVisualizer = visualizer;
 	}
 
-	/** Invoked when current debug session is suspended. */
 	@DsfServiceEventHandler
 	public void handleEvent(ISuspendedDMEvent event) {
-		// Update to show latest state.
-		fVisualizer.update();
+		IDMContext context = event.getDMContext();
+		if (context instanceof IContainerDMContext) {
+    		// We don't deal with processes
+    	} else if (context instanceof IMIExecutionDMContext) {
+    		// Thread suspended
+    		int tid = ((IMIExecutionDMContext)context).getThreadId();
+
+    		VisualizerThread thread = fVisualizer.getModel().getThread(tid);
+    		
+    		if (thread != null) {
+    			assert thread.getState() == VisualizerExecutionState.RUNNING;
+    			
+    			thread.setState(VisualizerExecutionState.SUSPENDED);
+    			fVisualizer.getMulticoreVisualizerCanvas().requestUpdate();
+    		}
+    	}
 	}
-	
+
+	@DsfServiceEventHandler
+	public void handleEvent(IResumedDMEvent event) {
+		IDMContext context = event.getDMContext();
+		if (context instanceof IContainerDMContext) {
+    		// We don't deal with processes
+    	} else if (context instanceof IMIExecutionDMContext) {
+    		// Thread resumed
+    		int tid = ((IMIExecutionDMContext)context).getThreadId();
+
+    		VisualizerThread thread = fVisualizer.getModel().getThread(tid);
+    		
+    		if (thread != null) {
+    			assert thread.getState() == VisualizerExecutionState.SUSPENDED ||
+     				   thread.getState() == VisualizerExecutionState.CRASHED;
+    			
+    			thread.setState(VisualizerExecutionState.RUNNING);
+    			fVisualizer.getMulticoreVisualizerCanvas().requestUpdate();
+    		}
+    	}
+	}
+
 	/** Invoked when a thread or process starts. */
 	@DsfServiceEventHandler
 	public void handleEvent(IStartedDMEvent event) {
@@ -88,7 +124,7 @@ public class MulticoreVisualizerEventListener {
 								int pid = Integer.parseInt(processContext.getProcId());
 								int tid = execDmc.getThreadId();
 
-								fVisualizer.getModel().addThread(new VisualizerThread(vCore, pid, tid));
+								fVisualizer.getModel().addThread(new VisualizerThread(vCore, pid, tid, VisualizerExecutionState.RUNNING));
 								
 								fVisualizer.getMulticoreVisualizerCanvas().requestUpdate();
 							}
@@ -109,9 +145,7 @@ public class MulticoreVisualizerEventListener {
     		// Thread exited
     		int tid = ((IMIExecutionDMContext)context).getThreadId();
 
-    		// We only need a threadId to remove a thread, since
-    		// threads are unique for a GDB debug session
-			fVisualizer.getModel().removeThread(tid);
+			fVisualizer.getModel().markThreadExited(tid);
 			
 			fVisualizer.getMulticoreVisualizerCanvas().requestUpdate();
     	}

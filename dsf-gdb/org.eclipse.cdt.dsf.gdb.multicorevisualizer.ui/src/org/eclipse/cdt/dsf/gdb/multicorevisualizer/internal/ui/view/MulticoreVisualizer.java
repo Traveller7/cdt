@@ -16,10 +16,12 @@ import org.eclipse.cdt.dsf.concurrent.ConfinedToDsfExecutor;
 import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
 import org.eclipse.cdt.dsf.datamodel.DMContexts;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
+import org.eclipse.cdt.dsf.debug.service.IRunControl;
 import org.eclipse.cdt.dsf.gdb.launching.GDBProcess;
 import org.eclipse.cdt.dsf.gdb.launching.GdbLaunch;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCPU;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCore;
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerExecutionState;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerModel;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerThread;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.DSFDebugModel;
@@ -482,7 +484,14 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 					DMContexts.getAncestorOfType(execContext, IMIProcessDMContext.class);
 				int pid = Integer.parseInt(processContext.getProcId());
 				int tid = execContext.getThreadId();
-				model.addThread(new VisualizerThread(core, pid, tid));
+				
+				VisualizerExecutionState state = VisualizerExecutionState.RUNNING;
+				IRunControl runControl = m_sessionState.getService(IRunControl.class);
+				if (runControl != null && runControl.isSuspended(execContext)) {
+					state = VisualizerExecutionState.SUSPENDED; 
+				}
+				
+				model.addThread(new VisualizerThread(core, pid, tid, state));
 			}
 			
 		}

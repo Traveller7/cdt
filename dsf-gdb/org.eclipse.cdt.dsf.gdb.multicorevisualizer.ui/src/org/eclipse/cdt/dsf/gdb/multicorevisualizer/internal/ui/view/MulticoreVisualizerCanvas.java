@@ -417,7 +417,7 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 				MulticoreVisualizerCore mcore = m_coreMap.get(core);
 				if (mcore != null) {
 					MulticoreVisualizerThread mthread =
-						new MulticoreVisualizerThread(mcore, thread.getPID(), thread.getTID());
+						new MulticoreVisualizerThread(mcore, thread.getPID(), thread.getTID(), thread.getState());
 					mcore.addThread(mthread);
 					m_threads.add(mthread);
 					m_threadMap.put(thread, mthread);
