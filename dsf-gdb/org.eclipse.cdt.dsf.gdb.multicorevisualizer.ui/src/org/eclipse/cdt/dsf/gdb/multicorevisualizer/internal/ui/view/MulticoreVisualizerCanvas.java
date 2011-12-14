@@ -21,14 +21,12 @@ import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerM
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerThread;
 import org.eclipse.cdt.visualizer.ui.canvas.GraphicCanvas;
 import org.eclipse.cdt.visualizer.ui.plugin.CDTVisualizerUIPlugin;
-import org.eclipse.cdt.visualizer.ui.util.Colors;
 import org.eclipse.cdt.visualizer.ui.util.GUIUtils;
 import org.eclipse.cdt.visualizer.ui.util.SelectionManager;
 import org.eclipse.cdt.visualizer.ui.util.Timer;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Rectangle;
@@ -464,29 +462,16 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 		CDTVisualizerUIPlugin.getResources();
 		
 		// paint cpus
-		Color fg, bg;
-		fg = Colors.getColor(0,255,0);
-		bg = Colors.getColor(0,64,0);
-		gc.setForeground(fg);
-		gc.setBackground(bg);
 		for (MulticoreVisualizerCPU cpu : m_cpus) {
 			cpu.paintContent(gc);
 		}
 
-		// paint cores on top of cpus
-		fg = Colors.getColor(0,255,0);
-		bg = Colors.getColor(0,128,0);
-		gc.setForeground(fg);
-		gc.setBackground(bg);
+		// paint cores
 		for (MulticoreVisualizerCore core : m_cores) {
 			core.paintContent(gc);
 		}
 		
 		// paint cpus IDs on top of cores
-		fg = Colors.getColor(0,255,0);
-		bg = Colors.getColor(0,64,0);
-		gc.setForeground(fg);
-		gc.setBackground(bg);
 		for (MulticoreVisualizerCPU cpu : m_cpus) {
 			cpu.paintDecorations(gc);
 		}
