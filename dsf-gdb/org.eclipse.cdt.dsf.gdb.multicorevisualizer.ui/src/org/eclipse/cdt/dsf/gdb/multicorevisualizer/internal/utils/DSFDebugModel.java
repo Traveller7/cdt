@@ -22,14 +22,20 @@ import org.eclipse.cdt.dsf.datamodel.IDMContext;
 import org.eclipse.cdt.dsf.debug.service.IProcesses;
 import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMContext;
 import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMData;
+import org.eclipse.cdt.dsf.debug.service.IRunControl;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.IContainerDMContext;
+import org.eclipse.cdt.dsf.debug.service.IRunControl.IExecutionDMData;
+import org.eclipse.cdt.dsf.debug.service.IRunControl.IExecutionDMData2;
+import org.eclipse.cdt.dsf.debug.service.IRunControl.StateChangeReason;
 import org.eclipse.cdt.dsf.debug.service.command.ICommandControlService;
 import org.eclipse.cdt.dsf.debug.service.command.ICommandControlService.ICommandControlDMContext;
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerExecutionState;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICPUDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICoreDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.IHardwareTargetDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBProcesses.IGdbThreadDMData;
+import org.eclipse.cdt.dsf.mi.service.IMIExecutionDMContext;
 
 
 /** Debugger state information accessors. */
@@ -117,8 +123,8 @@ public class DSFDebugModel {
 		);
 	}
 	
-	/** Requests list of Cores.
-	 *  Calls back to getCoresDone() on listener. */
+	/** Requests list of Threads.
+	 *  Calls back to getThreadsDone() on listener. */
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public static void getThreads(DSFSessionState sessionState,
 								  ICPUDMContext cpuContext,
@@ -165,8 +171,7 @@ public class DSFDebugModel {
 						new ImmediateRequestMonitor() {
 							@Override
 							protected void handleCompleted() {
-								IDMContext[] threadContexts = new IDMContext[threadContexts_f.size()];
-								threadContexts_f.toArray(threadContexts);
+								IDMContext[] threadContexts = threadContexts_f.toArray(new IDMContext[threadContexts_f.size()]);
 								listener_f.getThreadsDone(cpuContext_f, coreContext_f, threadContexts, arg_f);
 							}
 						});
@@ -226,5 +231,81 @@ public class DSFDebugModel {
 			}
 		);
 	}
+	
+	/** Requests execution state of a thread.
+	 *  Calls back to getThreadExecutionStateDone() on listener. */
+	@ConfinedToDsfExecutor("getSession().getExecutor()")
+	public static void getThreadExecutionState(DSFSessionState sessionState,
+			                                   ICPUDMContext cpuContext,
+			                                   ICoreDMContext coreContext,
+			                                   IMIExecutionDMContext threadContext,
+			                                   DSFDebugModelListener listener,
+			                                   Object arg)
+	{
+		IRunControl runControl = sessionState.getService(IRunControl.class);
 
+		if (runControl == null) {
+			listener.getThreadExecutionStateDone(cpuContext, coreContext, threadContext, null, arg);
+			return;
+		}
+
+		final ICPUDMContext  cpuContext_f           = cpuContext;
+		final ICoreDMContext coreContext_f          = coreContext;
+		final IMIExecutionDMContext threadContext_f = threadContext;
+		final DSFDebugModelListener listener_f      = listener;
+		final Object arg_f                          = arg;
+
+		
+		if (runControl.isSuspended(threadContext_f) == false) {
+			// The thread is running
+			listener_f.getThreadExecutionStateDone(cpuContext_f, coreContext_f, threadContext_f, 
+					                               VisualizerExecutionState.RUNNING, arg_f);
+		} else {
+			// For a suspended thread, let's see why it is suspended,
+			// to find out if the thread is crashed
+			runControl.getExecutionData(threadContext_f, 
+					new ImmediateDataRequestMonitor<IExecutionDMData>() {
+				@Override
+				protected void handleCompleted() {
+					IExecutionDMData executionData = getData();
+
+					VisualizerExecutionState state = VisualizerExecutionState.SUSPENDED;
+					
+					if (isSuccess() && executionData != null) {
+						if (executionData.getStateChangeReason() == StateChangeReason.SIGNAL) {
+							if (executionData instanceof IExecutionDMData2) {
+								String details = ((IExecutionDMData2)executionData).getDetails();
+								if (details != null) {
+									if (isCrashSignal(details)) {
+										state = VisualizerExecutionState.CRASHED;
+									}
+								}
+							}
+						}
+					}
+					
+					listener_f.getThreadExecutionStateDone(cpuContext_f, coreContext_f, threadContext_f, state, arg_f);
+				}
+			});
+		}
+
+	}
+
+	/**
+	 * Return true if the string SIGNALINFO describes a signal
+	 * that indicates a crash.
+	 */
+	public static boolean isCrashSignal(String signalInfo) {
+		if (signalInfo.startsWith("SIGHUP") || //$NON-NLS-1$
+				signalInfo.startsWith("SIGILL") || //$NON-NLS-1$
+				signalInfo.startsWith("SIGABRT") || //$NON-NLS-1$
+				signalInfo.startsWith("SIGBUS") || //$NON-NLS-1$
+				signalInfo.startsWith("SIGSEGV")) { //$NON-NLS-1$
+			// Not sure about the list of events here...
+			// We are dealing with a crash
+			return true;
+		}
+
+		return false;
+	}
 }

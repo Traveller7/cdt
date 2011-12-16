@@ -23,13 +23,17 @@ import org.eclipse.cdt.dsf.debug.service.IRunControl.IExitedDMEvent;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.IResumedDMEvent;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.IStartedDMEvent;
 import org.eclipse.cdt.dsf.debug.service.IRunControl.ISuspendedDMEvent;
+import org.eclipse.cdt.dsf.debug.service.IRunControl.StateChangeReason;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.MulticoreVisualizerUIPlugin;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCore;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerExecutionState;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerThread;
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.DSFDebugModel;
 import org.eclipse.cdt.dsf.gdb.service.IGDBProcesses.IGdbThreadDMData;
 import org.eclipse.cdt.dsf.mi.service.IMIExecutionDMContext;
 import org.eclipse.cdt.dsf.mi.service.IMIProcessDMContext;
+import org.eclipse.cdt.dsf.mi.service.command.events.IMIDMEvent;
+import org.eclipse.cdt.dsf.mi.service.command.events.MISignalEvent;
 import org.eclipse.cdt.dsf.service.DsfServiceEventHandler;
 import org.eclipse.cdt.dsf.service.DsfServicesTracker;
 
@@ -60,7 +64,23 @@ public class MulticoreVisualizerEventListener {
     		if (thread != null) {
     			assert thread.getState() == VisualizerExecutionState.RUNNING;
     			
-    			thread.setState(VisualizerExecutionState.SUSPENDED);
+    			VisualizerExecutionState newState = VisualizerExecutionState.SUSPENDED;
+
+    			if (event.getReason() == StateChangeReason.SIGNAL) {
+    				if (event instanceof IMIDMEvent) {
+    					Object miEvent = ((IMIDMEvent)event).getMIEvent();
+    					if (miEvent instanceof MISignalEvent) {
+    						String signalName = ((MISignalEvent)miEvent).getName();
+    						if (DSFDebugModel.isCrashSignal(signalName)) {
+    							newState = VisualizerExecutionState.CRASHED;
+    						}
+    						
+    					}
+    				}
+    			}
+
+
+    			thread.setState(newState);
     			fVisualizer.getMulticoreVisualizerCanvas().requestUpdate();
     		}
     	}
