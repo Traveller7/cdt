@@ -319,10 +319,14 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		if (debugContext instanceof IDMVMContext) {
 			sessionId = ((IDMVMContext)debugContext).getDMContext().getSessionId();
 		} else if (debugContext instanceof GdbLaunch) {
-			sessionId = ((GdbLaunch)debugContext).getSession().getId();
+			GdbLaunch gdbLaunch = (GdbLaunch)debugContext;
+			if (gdbLaunch.isTerminated() == false) {
+				sessionId = gdbLaunch.getSession().getId();
+			}
 		} else if (debugContext instanceof GDBProcess) {
 			ILaunch launch = ((GDBProcess)debugContext).getLaunch();
-			if (launch instanceof GdbLaunch) {
+			if (launch.isTerminated() == false &&
+					launch instanceof GdbLaunch) {
 				sessionId = ((GdbLaunch)launch).getSession().getId();
 			}
 		}
