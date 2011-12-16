@@ -402,6 +402,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		if (cpuContexts == null || cpuContexts.length == 0) {
 			// Whoops, no CPU data.
 			// We'll fake a CPU and use it to contain any cores we find.
+			
 			model.addCPU(new VisualizerCPU(0));
 			
 			// keep track of CPUs left to visit
@@ -434,14 +435,15 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 							 Object arg)
 	{
 		VisualizerModel model = (VisualizerModel) arg;
-		int cpuID = Integer.parseInt(cpuContext.getId());
-		VisualizerCPU cpu = model.getCPU(cpuID);
 
 		if (coreContexts == null || coreContexts.length == 0) {
 			// no cores for this cpu context
 			// TODO: do we care about this?
 		}
 		else {
+			int cpuID = Integer.parseInt(cpuContext.getId());
+			VisualizerCPU cpu = model.getCPU(cpuID);
+
 			// keep track of Cores left to visit
 			int count = coreContexts.length;
 			model.getTodo().add(count);
@@ -469,16 +471,17 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 							   Object arg)
 	{
 		VisualizerModel model = (VisualizerModel) arg;
-		int cpuID  = Integer.parseInt(cpuContext.getId());
-		VisualizerCPU  cpu  = model.getCPU(cpuID);
-		int coreID = Integer.parseInt(coreContext.getId());
-		VisualizerCore core = cpu.getCore(coreID);
 		
 		if (threadContexts == null || threadContexts.length == 0) {
 			// no threads for this core
 			// TODO: do we care about this?
 		}
 		else {
+			int cpuID  = Integer.parseInt(cpuContext.getId());
+			VisualizerCPU  cpu  = model.getCPU(cpuID);
+			int coreID = Integer.parseInt(coreContext.getId());
+			VisualizerCore core = cpu.getCore(coreID);
+
 			for (IDMContext threadContext : threadContexts) {
 				IMIExecutionDMContext execContext =
 					DMContexts.getAncestorOfType(threadContext, IMIExecutionDMContext.class);

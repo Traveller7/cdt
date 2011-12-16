@@ -92,4 +92,21 @@ public interface IGDBHardware extends IDsfService {
      * Retrieves data for a given ICPUDMContext or ICoreDMContext context.
      */
     public void getExecutionData(IDMContext dmc, DataRequestMonitor<IDMData> rm);
+    
+    /**
+     * Create a CPU context.
+     * 
+     * @param targetDmc The parent context of this context
+     * @param CPUId The id of the CPU
+     */
+    public ICPUDMContext createCPUContext(IHardwareTargetDMContext targetDmc, String CPUId);
+
+    /**
+     * Create a core context.
+     * 
+     * @param cpuDmc The parent CPU context of this context
+     * @param coreId The id of the core
+     */
+    public ICoreDMContext createCoreContext(ICPUDMContext cpuDmc, String coreId);
+
 }

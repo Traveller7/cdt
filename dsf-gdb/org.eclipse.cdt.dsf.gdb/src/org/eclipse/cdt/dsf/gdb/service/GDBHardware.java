@@ -227,7 +227,7 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 				String[] cpuIdsArray = cpuIds.toArray(new String[cpuIds.size()]);
 				fCPUs = new ICPUDMContext[cpuIdsArray.length];
 				for (int i = 0; i < cpuIdsArray.length; i++) {
-					fCPUs[i] = new GDBCPUDMC(getSession().getId(), dmc, cpuIdsArray[i]);
+					fCPUs[i] = createCPUContext(dmc, cpuIdsArray[i]);
 				}
 			} else {
 				// No way to know the CPUs on a local Windows session.
@@ -264,9 +264,10 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 				}
 			}
 		} else if (dmc instanceof IHardwareTargetDMContext) {
+			// Get all the cores for this target
+
 			final IHardwareTargetDMContext targetDmc = (IHardwareTargetDMContext)dmc;
 			
-			// Get all the cores for this target
 			// We already know the list of cores.  Just return it.
 			if (fCores != null) {
 				rm.done(fCores);
@@ -297,7 +298,7 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 								//
 								// We don't have CPU info in this case so let's put them all under
 								// a single CPU
-								ICPUDMContext cpuDmc = new GDBCPUDMC(getSession().getId(), targetDmc, "0"); //$NON-NLS-1$
+								ICPUDMContext cpuDmc = createCPUContext(targetDmc, "0"); //$NON-NLS-1$
 								Set<ICoreDMContext> coreDmcs = new HashSet<ICoreDMContext>();
 								for (String id : coreIds) {
 									coreDmcs.add(new GDBCoreDMC(getSession().getId(), cpuDmc, id));
@@ -314,8 +315,8 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 					ICoreInfo[] cores = new CoreList().getCoreList();
 					fCores = new ICoreDMContext[cores.length];
 					for (int i = 0; i < cores.length; i++) {
-						ICPUDMContext cpuDmc = new GDBCPUDMC(getSession().getId(), targetDmc, cores[i].getPhysicalId());
-						fCores[i] = new GDBCoreDMC(getSession().getId(), cpuDmc, cores[i].getId());
+						ICPUDMContext cpuDmc = createCPUContext(targetDmc, cores[i].getPhysicalId());
+						fCores[i] = createCoreContext(cpuDmc, cores[i].getId());
 					}
 				} else {
 					// No way to know the cores on a local Windows session.
@@ -337,6 +338,16 @@ public class GDBHardware extends AbstractDsfService implements IGDBHardware, ICa
 		} else {
 			rm.done(new Status(IStatus.ERROR, GdbPlugin.PLUGIN_ID, INVALID_HANDLE, "Invalid DMC type", null)); //$NON-NLS-1$
 		}
+	}
+	
+	@Override
+	public ICPUDMContext createCPUContext(IHardwareTargetDMContext targetDmc, String CPUId) {
+		return new GDBCPUDMC(getSession().getId(), targetDmc, CPUId);
+	}
+
+	@Override
+	public ICoreDMContext createCoreContext(ICPUDMContext cpuDmc, String coreId) {
+		return new GDBCoreDMC(getSession().getId(), cpuDmc, coreId);
 	}
 	
 	public void flushCache(IDMContext context) {
