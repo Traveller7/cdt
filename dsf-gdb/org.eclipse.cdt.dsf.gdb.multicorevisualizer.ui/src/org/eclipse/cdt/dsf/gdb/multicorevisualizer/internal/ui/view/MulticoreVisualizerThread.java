@@ -12,8 +12,10 @@
 // package declaration
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view;
 
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerExecutionState;
 import org.eclipse.cdt.visualizer.ui.util.Colors;
 import org.eclipse.cdt.visualizer.ui.util.GUIUtils;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 
 /**
@@ -36,7 +38,7 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 	// --- members ---
 	
 	/** Parent CPU. */
-	protected MulticoreVisualizerCore m_core = null;
+	protected MulticoreVisualizerCore m_core;
 	
 	/** Process ID. */
 	protected int m_pid;
@@ -44,16 +46,18 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 	/** Thread ID. */
 	protected int m_tid;
 	
+	protected VisualizerExecutionState m_state;
+	
 
 	// --- constructors/destructors ---
 	
 	/** Constructor */
-	public MulticoreVisualizerThread(MulticoreVisualizerCore core, int pid, int tid)
-	{
+	public MulticoreVisualizerThread(MulticoreVisualizerCore core, int pid, int tid, VisualizerExecutionState state) {
 		super();
 		m_core = core;
 		m_pid = pid;
 		m_tid = tid;
+		m_state = state;
 	}
 	
 	/** Dispose method */
@@ -84,10 +88,29 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 	public int getTID() {
 		return m_tid;
 	}
+	
+	public VisualizerExecutionState getState() {
+		return m_state;
+	}
 
 	
 	// --- methods ---
 	
+	private Color getThreadStateColor() {
+		switch (m_state) {
+		case RUNNING:
+			return IMulticoreVisualizerConstants.COLOR_RUNNING_THREAD;
+		case SUSPENDED:
+			return IMulticoreVisualizerConstants.COLOR_SUSPENDED_THREAD;
+		case CRASHED:
+			return IMulticoreVisualizerConstants.COLOR_CRASHED_THREAD;
+		case EXITED:
+			return IMulticoreVisualizerConstants.COLOR_EXITED_THREAD;
+		}
+		
+		assert false;
+		return Colors.BLACK;
+	}
 	
 	// --- paint methods ---
 
@@ -97,7 +120,7 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 	@Override
 	public void paintContent(GC gc) {
 		if (m_core.getWidth() >= MIN_PARENT_WIDTH) {
-			gc.setBackground(Colors.YELLOW);
+			gc.setBackground(getThreadStateColor());
 	
 			int x = m_bounds.x;
 			int y = m_bounds.y;

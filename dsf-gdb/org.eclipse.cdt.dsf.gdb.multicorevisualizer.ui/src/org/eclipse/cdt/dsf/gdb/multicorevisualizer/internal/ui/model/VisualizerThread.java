@@ -18,19 +18,21 @@ public class VisualizerThread
 	// --- members ---
 	
 	/** Current core this thread is on. */
-	public VisualizerCore m_core;
+	private VisualizerCore m_core;
 	
 	/** Process ID (pid). */
-	public int m_pid;
+	private int m_pid;
 	
 	/** Thread ID (tid). */
-	public int m_tid;
+	private int m_tid;
 		
-	/** Constructor */
-	public VisualizerThread(VisualizerCore core, int pid, int tid) {
+	private VisualizerExecutionState m_threadState;
+	
+	public VisualizerThread(VisualizerCore core, int pid, int tid, VisualizerExecutionState state) {
 		m_core = core;
 		m_pid = pid;
 		m_tid = tid;
+		m_threadState = state;
 	}
 	
 	/** Dispose method */
@@ -46,6 +48,10 @@ public class VisualizerThread
 		return m_core;
 	}
 	
+	public void setCore(VisualizerCore core) {
+		m_core = core;
+	}
+
 	/** Gets process id (pid). */
 	public int getPID() {
 		return m_pid;
@@ -56,6 +62,13 @@ public class VisualizerThread
 		return m_tid;
 	}
 
+	public VisualizerExecutionState getState() {
+		return m_threadState;
+	}
+
+	public void setState(VisualizerExecutionState state) {
+		m_threadState = state;
+	}
 	
 	// --- methods ---
 	

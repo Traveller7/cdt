@@ -20,6 +20,7 @@ import org.eclipse.cdt.dsf.gdb.launching.GDBProcess;
 import org.eclipse.cdt.dsf.gdb.launching.GdbLaunch;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCPU;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCore;
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerExecutionState;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerModel;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerThread;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.DSFDebugModel;
@@ -393,6 +394,13 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		setCanvasModel(model);
 	}
 	
+	private void done(int n, VisualizerModel model) {
+		model.getTodo().done(n);
+		if (model.getTodo().isDone()) {
+			getVisualizerModelDone(model);
+		}
+	}
+	
 	/** Invoked when DSFDebugModel.getCPUs() completes. */
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public void getCPUsDone(ICPUDMContext[] cpuContexts, Object arg)
@@ -410,8 +418,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 			
 			// Collect core data.
 			DSFDebugModel.getCores(m_sessionState, this, model);
-		}
-		else {
+		} else {
 			// keep track of CPUs left to visit
 			int count = cpuContexts.length;
 			model.getTodo().add(count);
@@ -438,9 +445,8 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 
 		if (coreContexts == null || coreContexts.length == 0) {
 			// no cores for this cpu context
-			// TODO: do we care about this?
-		}
-		else {
+			// That's fine.
+		} else {
 			int cpuID = Integer.parseInt(cpuContext.getId());
 			VisualizerCPU cpu = model.getCPU(cpuID);
 
@@ -454,12 +460,12 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 				
 				// Collect thread data
 				DSFDebugModel.getThreads(m_sessionState, cpuContext, coreContext, this, model);
-			}
-			
-			// keep track of CPUs visited
-			// note: do this _after_ incrementing for cores
-			model.getTodo().done(1);
+			}			
 		}
+		
+		// keep track of CPUs visited
+		// note: do this _after_ incrementing for cores
+		done(1, model);
 	}
 
 	
@@ -474,32 +480,56 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		
 		if (threadContexts == null || threadContexts.length == 0) {
 			// no threads for this core
-			// TODO: do we care about this?
-		}
-		else {
-			int cpuID  = Integer.parseInt(cpuContext.getId());
-			VisualizerCPU  cpu  = model.getCPU(cpuID);
-			int coreID = Integer.parseInt(coreContext.getId());
-			VisualizerCore core = cpu.getCore(coreID);
+			// That's fine.
+		} else {
+			// keep track of threads left to visit
+			int count = threadContexts.length;
+			model.getTodo().add(count);
 
 			for (IDMContext threadContext : threadContexts) {
 				IMIExecutionDMContext execContext =
 					DMContexts.getAncestorOfType(threadContext, IMIExecutionDMContext.class);
-				IMIProcessDMContext processContext =
-					DMContexts.getAncestorOfType(execContext, IMIProcessDMContext.class);
-				int pid = Integer.parseInt(processContext.getProcId());
-				int tid = execContext.getThreadId();
-				model.addThread(new VisualizerThread(core, pid, tid));
+
+				// Don't add the thread to the model just yet, let's wait until we have its execution state.
+				// Collect thread execution state
+				DSFDebugModel.getThreadExecutionState(m_sessionState, cpuContext, coreContext, execContext, this, model);
 			}
 			
 		}
 		
-		// keep track of Cores visited
-		model.getTodo().done(1);
-		if (model.getTodo().isDone()) {
-			getVisualizerModelDone(model);
-		}
+		// keep track of cores visited
+		// note: do this _after_ incrementing for threads
+		done(1, model);
 	}
 	
+	/** Invoked when getThreads() request completes. */
+	@ConfinedToDsfExecutor("getSession().getExecutor()")
+	public void getThreadExecutionStateDone(ICPUDMContext cpuContext,
+			                                ICoreDMContext coreContext,
+			                                IMIExecutionDMContext execContext,
+			                                VisualizerExecutionState state,
+			                                Object arg)
+	{
+		VisualizerModel model = (VisualizerModel) arg;
+		int cpuID  = Integer.parseInt(cpuContext.getId());
+		VisualizerCPU  cpu  = model.getCPU(cpuID);
+		int coreID = Integer.parseInt(coreContext.getId());
+		VisualizerCore core = cpu.getCore(coreID);
+		
+		if (state == null) {
+			// Unable to obtain execution state.  Assume running
+			state = VisualizerExecutionState.RUNNING;
+		}
+
+		IMIProcessDMContext processContext =
+				DMContexts.getAncestorOfType(execContext, IMIProcessDMContext.class);
+		int pid = Integer.parseInt(processContext.getProcId());
+		int tid = execContext.getThreadId();
+
+		model.addThread(new VisualizerThread(core, pid, tid, state));
+		
+		// keep track of threads visited
+		done(1, model);
+	}
 }
 

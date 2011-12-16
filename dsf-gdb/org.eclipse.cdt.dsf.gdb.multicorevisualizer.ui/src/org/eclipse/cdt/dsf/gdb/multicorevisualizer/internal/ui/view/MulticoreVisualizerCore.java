@@ -14,7 +14,10 @@ package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerExecutionState;
+import org.eclipse.cdt.visualizer.ui.util.Colors;
 import org.eclipse.cdt.visualizer.ui.util.GUIUtils;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 
 /**
@@ -33,12 +36,10 @@ public class MulticoreVisualizerCore extends MulticoreVisualizerGraphicObject
 	/** List of threads currently on this core. */
 	protected ArrayList<MulticoreVisualizerThread> m_threads;
 	
-
 	// --- constructors/destructors ---
 	
 	/** Constructor */
-	public MulticoreVisualizerCore(MulticoreVisualizerCPU cpu, int id)
-	{
+	public MulticoreVisualizerCore(MulticoreVisualizerCPU cpu, int id) {
 		super();
 		m_cpu = cpu;
 		if (m_cpu != null) m_cpu.addCore(this);
@@ -95,8 +96,54 @@ public class MulticoreVisualizerCore extends MulticoreVisualizerGraphicObject
 	{
 		return m_threads;
 	}
-	
 
+	/**
+	 * A core state is based on its thread states.
+	 * If any thread is CRASHED, the core is CRASHED.
+	 * If no thread is CRASHED and any thread is SUSPENDED, the core is SUSPENDED.
+	 * If no thread is CRASHED and no thread is SUSPENDED, the core is RUNNING.
+	 */
+	private VisualizerExecutionState getCoreState() {
+		VisualizerExecutionState state = VisualizerExecutionState.RUNNING;
+		
+		for (MulticoreVisualizerThread thread : m_threads) {
+			switch (thread.getState()) {
+			case CRASHED:
+				// As soon as we have a crashed thread, we mark
+				// the core as crashed.
+				return VisualizerExecutionState.CRASHED;
+			case SUSPENDED:
+				// As soon as we have a suspended thread, we
+				// consider the core as suspended.  However,
+				// we keep looping through the threads
+				// looking for a crashed one.
+				state = VisualizerExecutionState.SUSPENDED;
+				break;
+			}
+		}
+		
+		return state;
+	}
+	
+	private Color getCoreStateColor(boolean foreground) {
+		VisualizerExecutionState state = getCoreState();
+		
+		switch (state) {
+		case RUNNING:
+			if (foreground) return IMulticoreVisualizerConstants.COLOR_RUNNING_CORE_FG;
+			return IMulticoreVisualizerConstants.COLOR_RUNNING_CORE_BG;
+		case SUSPENDED:
+			if (foreground) return IMulticoreVisualizerConstants.COLOR_SUSPENDED_CORE_FG;
+			return IMulticoreVisualizerConstants.COLOR_SUSPENDED_CORE_BG;
+		case CRASHED:
+			if (foreground) return IMulticoreVisualizerConstants.COLOR_CRASHED_CORE_FG;
+			return IMulticoreVisualizerConstants.COLOR_CRASHED_CORE_BG;
+		}
+		
+		assert false;
+		return Colors.BLACK;
+	}
+	
 	// --- paint methods ---
 	
 	// RESOURCES: need to decide where to get Fonts from.
@@ -104,6 +151,9 @@ public class MulticoreVisualizerCore extends MulticoreVisualizerGraphicObject
 	/** Invoked to allow element to paint itself on the viewer canvas */
 	@Override
 	public void paintContent(GC gc) {
+		gc.setForeground(getCoreStateColor(true));
+		gc.setBackground(getCoreStateColor(false));
+
 		gc.fillRectangle(m_bounds);
 		gc.drawRectangle(m_bounds);
 		

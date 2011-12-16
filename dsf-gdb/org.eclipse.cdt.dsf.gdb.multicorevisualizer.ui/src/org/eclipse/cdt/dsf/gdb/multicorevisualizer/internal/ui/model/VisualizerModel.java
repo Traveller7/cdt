@@ -17,7 +17,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 
-
 /** 
  * Class representing the state of the data to display in the MulticoreVisualizer. 
  */
@@ -37,6 +36,11 @@ public class VisualizerModel
 	/** Completion state tracker. */
 	protected Todo m_todo;
 	
+	// Setting to remove exited threads, or keep them shown.
+	// If we are to support this, we should have a preference
+	// and a way to for the user to clean up old threads,
+	// or maybe a timeout to remove them.
+	private boolean m_keepExitedThreads = false;
 	
 	// --- constructors/destructors ---
 	
@@ -148,7 +152,21 @@ public class VisualizerModel
 	public List<VisualizerThread> getThreads() {
 		return m_threads;
 	}
-	
+
+	/** 
+	 * Find a thread by threadId.
+	 * Since thread ids are unique across a GDB session,
+	 * we can uniquely find a thread based on its id.
+	 */
+	public VisualizerThread getThread(int threadId) {
+		for (VisualizerThread thread : m_threads) {
+			if (thread.getTID() == threadId) {
+				return thread;
+			}
+		}
+		return null;
+	}
+
 	/** Adds thread. */
 	public VisualizerThread addThread(VisualizerThread thread) {
 		m_threads.add(thread);
@@ -162,8 +180,6 @@ public class VisualizerModel
 
 	/** 
 	 * Removes thread by threadId.
-	 * Since thread ids are unique accross a GDB session,
-	 * we can uniquely find a thread based on its id.
 	 */
 	public void removeThread(int threadId) {
 		Iterator<VisualizerThread> itr = m_threads.iterator();
@@ -173,6 +189,18 @@ public class VisualizerModel
 				itr.remove();
 				break;
 			}
+		}
+	}
+	
+	/**
+	 * Mark the specified thread as having exited.
+	 */
+	public void markThreadExited(int threadId) {
+		if (m_keepExitedThreads) {
+			VisualizerThread thread = getThread(threadId);
+			thread.setState(VisualizerExecutionState.EXITED);
+		} else {
+			removeThread(threadId);
 		}
 	}
 }

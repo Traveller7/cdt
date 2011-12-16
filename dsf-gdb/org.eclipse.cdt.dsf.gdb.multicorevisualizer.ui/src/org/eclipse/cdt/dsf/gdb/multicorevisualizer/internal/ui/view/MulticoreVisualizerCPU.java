@@ -14,7 +14,9 @@ package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.cdt.visualizer.ui.util.Colors;
 import org.eclipse.cdt.visualizer.ui.util.GUIUtils;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 
 /**
@@ -82,6 +84,12 @@ public class MulticoreVisualizerCPU extends MulticoreVisualizerGraphicObject
 	/** Invoked to allow element to paint itself on the viewer canvas */
 	@Override
 	public void paintContent(GC gc) {
+		Color fg, bg;
+		fg = Colors.getColor(0,255,0);
+		bg = Colors.getColor(0,64,0);
+		gc.setForeground(fg);
+		gc.setBackground(bg);
+		
 		gc.fillRectangle(m_bounds);
 		gc.drawRectangle(m_bounds);
 	}
@@ -98,6 +106,12 @@ public class MulticoreVisualizerCPU extends MulticoreVisualizerGraphicObject
 	@Override
 	public void paintDecorations(GC gc) {
 		if (m_bounds.height > 20) {
+			Color fg, bg;
+			fg = Colors.getColor(0,255,0);
+			bg = Colors.getColor(0,64,0);
+			gc.setForeground(fg);
+			gc.setBackground(bg);
+			
 			int text_indent = 6;
 			int tx = m_bounds.x + m_bounds.width  - text_indent;
 			int ty = m_bounds.y + m_bounds.height - text_indent;
