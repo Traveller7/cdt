@@ -9,7 +9,6 @@
  *     William R. Swanson (Tilera Corporation) - initial API and implementation
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view;
 
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerExecutionState;
@@ -25,14 +24,11 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 {
 	// --- constants ---
 	
-	/** Thread "pixie" spot width */
-	public static final int THREAD_SPOT_WIDTH = 12;
-	
-	/** Thread "pixie" spot height */
-	public static final int THREAD_SPOT_HEIGHT = 12;
+	/** Thread "pixie" spot width/height */
+	public static final int THREAD_SPOT_SIZE = 18;
 	
 	/** Minimum containing object size to allow thread to draw itself. */
-	public static final int MIN_PARENT_WIDTH = 14;
+	public static final int MIN_PARENT_WIDTH = THREAD_SPOT_SIZE + 4;
 
 	
 	// --- members ---
@@ -53,7 +49,6 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 	
 	/** Constructor */
 	public MulticoreVisualizerThread(MulticoreVisualizerCore core, int pid, int tid, VisualizerExecutionState state) {
-		super();
 		m_core = core;
 		m_pid = pid;
 		m_tid = tid;
@@ -124,8 +119,8 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 	
 			int x = m_bounds.x;
 			int y = m_bounds.y;
-			int w = THREAD_SPOT_WIDTH;
-			int h = THREAD_SPOT_HEIGHT;
+			int w = THREAD_SPOT_SIZE;
+			int h = THREAD_SPOT_SIZE;
 			
 			// draw an alpha-shaded "pixie" light for each thread
 			int step1 = 3;
@@ -153,6 +148,14 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 			// draw TID
 			String displayTID = Integer.toString(m_tid);
 			GUIUtils.drawText(gc, displayTID, x + w + 4, y + 2);
+			
+			// draw selection marker, if any
+			if (m_selected)
+			{
+				gc.setForeground(IMulticoreVisualizerConstants.COLOR_SELECTED);
+				gc.drawOval(x-2,y-2,w+4,h+4);
+				gc.drawOval(x-3,y-3,w+6,h+6);
+			}
 		}
 	}
 }

@@ -18,11 +18,11 @@ import org.eclipse.swt.graphics.Color;
 
 /**
  * Constants to be used in the Multicore Visualizer.
- * 
- * @noimplement This interface is not intended to be implemented by clients.
  */
-
-public class IMulticoreVisualizerConstants {
+public class IMulticoreVisualizerConstants
+{	
+	// General canvas colors
+	public static final Color COLOR_SELECTED = Colors.CYAN;
 	
 	// Colors for drawing threads
 	
