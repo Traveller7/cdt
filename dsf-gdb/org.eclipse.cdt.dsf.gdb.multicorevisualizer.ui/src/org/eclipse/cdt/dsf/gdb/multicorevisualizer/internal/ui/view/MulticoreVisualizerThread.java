@@ -153,8 +153,8 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 			if (m_selected)
 			{
 				gc.setForeground(IMulticoreVisualizerConstants.COLOR_SELECTED);
-				gc.drawOval(x-2,y-2,w+4,h+4);
-				gc.drawOval(x-3,y-3,w+6,h+6);
+				gc.drawOval(x-2,y-2,w+3,h+3);
+				gc.drawOval(x-3,y-3,w+5,h+5);
 			}
 		}
 	}
