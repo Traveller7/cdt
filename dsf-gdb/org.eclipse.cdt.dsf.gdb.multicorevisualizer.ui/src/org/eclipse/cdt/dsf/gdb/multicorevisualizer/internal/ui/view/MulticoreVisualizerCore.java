@@ -40,7 +40,6 @@ public class MulticoreVisualizerCore extends MulticoreVisualizerGraphicObject
 	
 	/** Constructor */
 	public MulticoreVisualizerCore(MulticoreVisualizerCPU cpu, int id) {
-		super();
 		m_cpu = cpu;
 		if (m_cpu != null) m_cpu.addCore(this);
 		m_id = id;

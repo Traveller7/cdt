@@ -25,7 +25,6 @@ public class MulticoreVisualizerGraphicObject extends GraphicObject
 	
 	/** Constructor */
 	public MulticoreVisualizerGraphicObject() {
-		super();
 	}
 	
 	/** Dispose method */

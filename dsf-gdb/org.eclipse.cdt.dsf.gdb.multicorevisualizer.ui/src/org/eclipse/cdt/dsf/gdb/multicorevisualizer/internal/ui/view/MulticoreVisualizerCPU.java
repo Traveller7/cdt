@@ -38,7 +38,6 @@ public class MulticoreVisualizerCPU extends MulticoreVisualizerGraphicObject
 	/** Constructor */
 	public MulticoreVisualizerCPU(int id)
 	{
-		super();
 		m_id = id;
 		m_cores = new ArrayList<MulticoreVisualizerCore>();
 	}
