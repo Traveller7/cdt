@@ -18,16 +18,21 @@ public class VisualizerThread
 	// --- members ---
 	
 	/** Current core this thread is on. */
-	private VisualizerCore m_core;
+	protected VisualizerCore m_core;
 	
 	/** Process ID (pid). */
-	private int m_pid;
+	protected int m_pid;
 	
 	/** Thread ID (tid). */
-	private int m_tid;
+	protected int m_tid;
 		
-	private VisualizerExecutionState m_threadState;
+	/** Thread execution state. */
+	protected VisualizerExecutionState m_threadState;
+
 	
+	// --- constructors/destructors ---
+
+	/** Constructor. */
 	public VisualizerThread(VisualizerCore core, int pid, int tid, VisualizerExecutionState state) {
 		m_core = core;
 		m_pid = pid;
@@ -62,13 +67,16 @@ public class VisualizerThread
 		return m_tid;
 	}
 
+	/** Gets thread execution state. */
 	public VisualizerExecutionState getState() {
 		return m_threadState;
 	}
-
+	
+	/** Sets thread execution state. */
 	public void setState(VisualizerExecutionState state) {
 		m_threadState = state;
 	}
+	
 	
 	// --- methods ---
 	
@@ -96,6 +104,7 @@ public class VisualizerThread
 		return result;
 	}
 	
+	/** Returns string representation. */
 	@Override
 	public String toString() {
 		StringBuffer output = new StringBuffer();
