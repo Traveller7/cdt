@@ -11,6 +11,9 @@
 
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.eclipse.cdt.dsf.concurrent.ConfinedToDsfExecutor;
 import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
@@ -26,6 +29,7 @@ import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerT
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.DSFDebugModel;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.DSFDebugModelListener;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.DSFSessionState;
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils.DebugViewUtils;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICPUDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICoreDMContext;
 import org.eclipse.cdt.dsf.mi.service.IMIExecutionDMContext;
@@ -60,7 +64,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	// --- constants ---
 	
 	/** Eclipse ID for this view */
-	public static final String ECLIPSE_ID = "org.eclipse.cdt.dsf.gdb.multicorevisualizer.visualizer2"; //$NON-NLS-1$
+	public static final String ECLIPSE_ID = "org.eclipse.cdt.dsf.gdb.multicorevisualizer.visualizer"; //$NON-NLS-1$
 
 	
 	// --- members ---
@@ -85,8 +89,6 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	/** Constructor. */
 	public MulticoreVisualizer()
 	{
-		super();
-		
 		// initialize menu/toolbar actions
 		createActions();
 	}
@@ -187,15 +189,17 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		return fDataModel;
 	}
 	
+	
 	// --- action management ---
 
 	/** Creates actions for menus/toolbar. */
-	protected void createActions() {
-
+	protected void createActions()
+	{
 	}
 	
 	/** Updates actions displayed on menu/toolbars. */
-	protected void updateActions() {
+	protected void updateActions()
+	{
 	}
 
 	/** Updates actions specific to context menu. */
@@ -280,24 +284,21 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	@Override
 	public void workbenchSelectionChanged(ISelection selection)
 	{
-		updateDebugContext();
-	}
-	
-	/**
-	 * Updates visualizer selection state from canvas.
-	 * Intended to be invoked when workbench selection changes
-	 * and we programmatically set the canvas selection,
-	 * since canvas will not raise a selection changed event in this case.
-	 */
-	protected void updateSelection() {
-		setSelection(m_canvas.getSelection(), false);
+		// See if we need to update our debug info from
+		// the workbench selection. This will be done asynchronously.
+		boolean changed = updateDebugContext();
+		
+		// Even if debug info doesn't change, we still want to
+		// check whether the canvas selection needs to change
+		// to reflect the current workbench selection.
+		if (! changed) updateCanvasSelection();
 	}
 	
 	
 	// --- ISelectionChangedListener implementation ---
 
 	/**
-	 * Intended to be invoked when visualizer control's selection changes.
+	 * Invoked when visualizer control's selection changes.
 	 * Sets control selection as its own selection,
 	 * and raises selection changed event for any listeners.
 	 */
@@ -305,15 +306,87 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	public void selectionChanged(SelectionChangedEvent event) {
 		super.selectionChanged(event);
 		
+		// Force Debug View's selection to reflect visualizer selection,
+		// since debug view doesn't update itself from the workbench selection.
+		// NOTE: This can be overridden by the model selection policy, if there is one.
+		ISelection debugViewSelection = visualizerToDebugViewSelection(getSelection());
+		DebugViewUtils.setDebugViewSelection(debugViewSelection);
+		
 		// update actions to reflect change of selection
 		updateActions();
 	}
 	
 	
+	// --- Selection conversion methods ---
+	
+	/** Gets debug view selection from visualizer selection. */
+	protected ISelection visualizerToDebugViewSelection(ISelection visualizerSelection)
+	{
+		VisualizerSelectionFinder selectionFinder =
+			new VisualizerSelectionFinder();
+		ISelection workbenchSelection =
+			selectionFinder.findSelection(visualizerSelection);
+		return workbenchSelection;
+	}
+	
+	/** Gets visualizer selection from debug view selection. */
+	protected ISelection workbenchToVisualizerSelection(ISelection workbenchSelection)
+	{
+		ISelection visualizerSelection = null;
+		
+		List<Object> items = SelectionUtils.getSelectedObjects(workbenchSelection);
+		
+		// Use the current canvas model to match Debug View items
+		// with corresponding threads, if any.
+		VisualizerModel model = m_canvas.getModel();
+		if (model != null) {
+			
+			Set<Object> selected = new HashSet<Object>();
+
+			for (Object item : items) {
+				
+				// Currently, we ignore selections other than DSF context objects.
+				// TODO: any other cases where we could map selections to canvas?
+				if (item instanceof IDMVMContext)
+				{
+					IDMContext context = ((IDMVMContext) item).getDMContext();
+					
+					IMIProcessDMContext processContext =
+							DMContexts.getAncestorOfType(context, IMIProcessDMContext.class);
+					int pid = Integer.parseInt(processContext.getProcId());
+					
+					IMIExecutionDMContext execContext =
+						DMContexts.getAncestorOfType(context, IMIExecutionDMContext.class);
+					int tid = (execContext == null) ? 0 : execContext.getThreadId();
+					
+					if (tid == 0) { // process
+						List<VisualizerThread> threads = model.getThreadsForProcess(pid);
+						if (threads != null) {
+							selected.addAll(threads);
+						}
+					}
+					else { // thread
+						VisualizerThread thread = model.getThread(tid);
+						if (thread != null) {
+							selected.add(thread);
+						}
+					}
+				}
+			}
+	
+			visualizerSelection = SelectionUtils.toSelection(selected);
+		}
+		
+		return visualizerSelection;
+	}
+	
+
 	// --- DSF Context Management ---
 	
-	/** Updates debug context being displayed by canvas. */
-	public void updateDebugContext()
+	/** Updates debug context being displayed by canvas.
+	 *  Returns true if canvas context actually changes, false if not.
+	 */
+	public boolean updateDebugContext()
 	{
 		String sessionId = null;
 		IAdaptable debugContext = DebugUITools.getDebugContext();
@@ -331,38 +404,40 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 				sessionId = ((GdbLaunch)launch).getSession().getId();
 			}
 		}
-
-		setDebugSession(sessionId);
+		
+		return setDebugSession(sessionId);
 	}
 
-	/** Sets debug context being displayed by canvas. */
-	public void setDebugSession(String sessionId) {
-		boolean changed = false;
-		if (m_sessionState != null) {
+	/** Sets debug context being displayed by canvas.
+	 *  Returns true if canvas context actually changes, false if not.
+	 */
+	public boolean setDebugSession(String sessionId) {
+		boolean changed = true;
+
+		if (m_sessionState != null &&
+			! m_sessionState.getSessionID().equals(sessionId))
+		{
+			m_sessionState.removeServiceEventListener(fEventListener);
 			m_sessionState.dispose();
 			m_sessionState = null;
 			changed = true;
 		}
-		if (sessionId != null) {
+		
+		if (m_sessionState == null &&
+			sessionId != null)
+		{
 			m_sessionState = new DSFSessionState(sessionId);
 			m_sessionState.addServiceEventListener(fEventListener);
 			changed = true;
 		}
+	
 		if (changed) update();
+		
+		return changed;
 	}
 
-	
-	// --- DSF Event Handlers ---
 
 	// --- Update methods ---
-	
-	/** Sets canvas model. */
-	protected void setCanvasModel(VisualizerModel model) {
-		final VisualizerModel model_f = model;
-		GUIUtils.exec(new Runnable() { public void run() {
-			m_canvas.setModel(model_f);
-		}});
-	}
 	
 	/** Updates visualizer canvas state. */
 	public void update() {
@@ -370,13 +445,57 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		// TODO: cache the VisualizerModel somehow and update it,
 		// rather than creating it from scratch each time.
 		if (m_sessionState == null) {
+			// no state to display, we can immediately clear the canvas
 			setCanvasModel(null);
 			return;
 		}
 		m_sessionState.execute(new DsfRunnable() { public void run() {
+			// get model asynchronously, and update canvas
+			// in getVisualizerModelDone().
 			getVisualizerModel();
 		}});
 	}
+	
+	/** Sets canvas model. (Also updates canvas selection.) */
+	protected void setCanvasModel(VisualizerModel model) {
+		final VisualizerModel model_f = model;
+		GUIUtils.exec(new Runnable() { public void run() {
+			m_canvas.setModel(model_f);
+			
+			// Update the canvas's selection from the current workbench selection.
+			updateCanvasSelectionInternal();
+		}});
+	}
+	
+	/** Updates canvas selection from current workbench selection. */
+	protected void updateCanvasSelection() {
+		GUIUtils.exec(new Runnable() { public void run() {
+			// Update the canvas's selection from the current workbench selection.
+			updateCanvasSelectionInternal();
+		}});
+	}
+	
+	/** Updates canvas selection from current workbench selection.
+	 *  Note: this method assumes it is called on the UI thread. */
+	protected void updateCanvasSelectionInternal()
+	{
+		updateCanvasSelectionInternal(SelectionUtils.getWorkbenchSelection());
+	}
+	
+	/** Updates canvas selection from current workbench selection.
+	 *  Note: this method assumes it is called on the UI thread. */
+	protected void updateCanvasSelectionInternal(ISelection selection)
+	{
+		ISelection canvasSelection = workbenchToVisualizerSelection(selection);
+		
+		// canvas does not raise a selection changed event in this case
+		// to avoid circular selection update events
+		if (canvasSelection != null)
+			m_canvas.setSelection(canvasSelection, false);
+	}
+	
+	
+	// --- Visualizer model update methods ---
 	
 	/** Starts visualizer model request.
 	 *  Calls getVisualizerModelDone() with the constructed model.
@@ -386,7 +505,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		fDataModel = new VisualizerModel();
 		DSFDebugModel.getCPUs(m_sessionState, this, fDataModel);
 	}
-
+	
 	/** Invoked when getModel() request completes. */
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public void getVisualizerModelDone(VisualizerModel model) {
@@ -394,13 +513,9 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		setCanvasModel(model);
 	}
 	
-	private void done(int n, VisualizerModel model) {
-		model.getTodo().done(n);
-		if (model.getTodo().isDone()) {
-			getVisualizerModelDone(model);
-		}
-	}
 	
+	// --- DSFDebugModelListener implementation ---
+
 	/** Invoked when DSFDebugModel.getCPUs() completes. */
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public void getCPUsDone(ICPUDMContext[] cpuContexts, Object arg)
@@ -530,6 +645,14 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		
 		// keep track of threads visited
 		done(1, model);
+	}
+	
+	/** Update "done" count for current visualizer model. */
+	protected void done(int n, VisualizerModel model) {
+		model.getTodo().done(n);
+		if (model.getTodo().isDone()) {
+			getVisualizerModelDone(model);
+		}
 	}
 }
 

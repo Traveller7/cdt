@@ -70,6 +70,15 @@ public class DSFSessionState
 	}
 	
 	
+	// --- accessors ---
+	
+	/** Returns session ID. */
+	public String getSessionID()
+	{
+		return m_sessionId;
+	}
+	
+	
 	// --- listener management ---
 
 	// <soapbox>

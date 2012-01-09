@@ -154,17 +154,35 @@ public class VisualizerModel
 	}
 
 	/** 
+	 * Finds thread(s) by process ID.
+	 * If no threads are found, returns null rather
+	 * than an empty list.
+	 */
+	public List<VisualizerThread> getThreadsForProcess(int processId) {
+		List<VisualizerThread> result = null;
+		for (VisualizerThread thread : m_threads) {
+			if (thread.getPID() == processId) {
+				if (result == null) result = new ArrayList<VisualizerThread>();
+				result.add(thread);
+			}
+		}
+		return result;
+	}
+
+	/** 
 	 * Find a thread by threadId.
 	 * Since thread ids are unique across a GDB session,
 	 * we can uniquely find a thread based on its id.
 	 */
 	public VisualizerThread getThread(int threadId) {
+		VisualizerThread result = null;
 		for (VisualizerThread thread : m_threads) {
 			if (thread.getTID() == threadId) {
-				return thread;
+				result = thread;
+				break;
 			}
 		}
-		return null;
+		return result;
 	}
 
 	/** Adds thread. */

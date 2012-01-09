@@ -12,6 +12,7 @@
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view;
 
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerExecutionState;
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerThread;
 import org.eclipse.cdt.visualizer.ui.util.Colors;
 import org.eclipse.cdt.visualizer.ui.util.GUIUtils;
 import org.eclipse.swt.graphics.Color;
@@ -36,29 +37,23 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 	/** Parent CPU. */
 	protected MulticoreVisualizerCore m_core;
 	
-	/** Process ID. */
-	protected int m_pid;
-	
-	/** Thread ID. */
-	protected int m_tid;
-	
-	protected VisualizerExecutionState m_state;
+	/** Visualizer model thread. */
+	protected VisualizerThread m_thread;
 	
 
 	// --- constructors/destructors ---
 	
 	/** Constructor */
-	public MulticoreVisualizerThread(MulticoreVisualizerCore core, int pid, int tid, VisualizerExecutionState state) {
+	public MulticoreVisualizerThread(MulticoreVisualizerCore core, VisualizerThread thread) {
 		m_core = core;
-		m_pid = pid;
-		m_tid = tid;
-		m_state = state;
+		m_thread = thread;
 	}
 	
 	/** Dispose method */
 	@Override
 	public void dispose() {
 		super.dispose();
+		m_thread = null;
 	}
 	
 	
@@ -73,26 +68,32 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 	public void setCore(MulticoreVisualizerCore core) {
 		m_core = core;
 	}
+	
+	/** Gets thread model object. */
+	public VisualizerThread getThread()
+	{
+		return m_thread;
+	}
 
 	/** Gets Process ID. */
 	public int getPID() {
-		return m_pid;
+		return m_thread.getPID();
 	}
 
 	/** Gets Thread ID. */
 	public int getTID() {
-		return m_tid;
+		return m_thread.getTID();
 	}
 	
 	public VisualizerExecutionState getState() {
-		return m_state;
+		return m_thread.getState();
 	}
 
 	
 	// --- methods ---
 	
 	private Color getThreadStateColor() {
-		switch (m_state) {
+		switch (m_thread.getState()) {
 		case RUNNING:
 			return IMulticoreVisualizerConstants.COLOR_RUNNING_THREAD;
 		case SUSPENDED:
@@ -137,16 +138,16 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 			gc.setForeground(Colors.WHITE);
 			
 			// special case: for the "process" thread, draw an enclosing circle
-			if (m_pid == m_tid) {
+			if (m_thread.isProcessThread()) {
 				gc.drawOval(x,y,w,h);
 			}
 			
-			// if it has a debugger, add a marker
+			// if it has an associated debugger, add a marker
 			// (for now, every thread is debugged.)
 			GUIUtils.drawText(gc, "D", x+w, y-8); //$NON-NLS-1$
 			
 			// draw TID
-			String displayTID = Integer.toString(m_tid);
+			String displayTID = Integer.toString(m_thread.getTID());
 			GUIUtils.drawText(gc, displayTID, x + w + 4, y + 2);
 			
 			// draw selection marker, if any

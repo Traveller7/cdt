@@ -46,6 +46,31 @@ public class VisualizerThread
 	}
 	
 	
+	// --- Object methods ---
+	
+	/** Equality comparison. */
+	@Override
+	public boolean equals(Object obj) {
+		boolean result = false;
+		if (obj instanceof VisualizerThread) {
+			VisualizerThread v = (VisualizerThread) obj;
+			result = (
+				v.m_pid == m_pid &&
+				v.m_tid == m_tid
+			);
+		}
+		return result;
+	}
+
+	/** Returns string representation. */
+	@Override
+	public String toString() {
+		StringBuffer output = new StringBuffer();
+		output.append(m_core).append(",Proc:").append(m_pid).append(",Thread:").append(m_tid);  //$NON-NLS-1$//$NON-NLS-2$
+		return output.toString();
+	}
+
+	
 	// --- accessors ---
 	
 	/** Gets core. */
@@ -57,6 +82,14 @@ public class VisualizerThread
 		m_core = core;
 	}
 
+	/** Returns true if this is the "process" thread, i.e.
+	 *  its PID and TID are the same.
+	 */
+	public boolean isProcessThread()
+	{
+		return m_pid == m_tid;
+	}
+	
 	/** Gets process id (pid). */
 	public int getPID() {
 		return m_pid;
@@ -102,13 +135,5 @@ public class VisualizerThread
 			}
 		}
 		return result;
-	}
-	
-	/** Returns string representation. */
-	@Override
-	public String toString() {
-		StringBuffer output = new StringBuffer();
-		output.append(m_core).append(",Proc:").append(m_pid).append(",Thread:").append(m_tid);  //$NON-NLS-1$//$NON-NLS-2$
-		return output.toString();
 	}
 }

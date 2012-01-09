@@ -25,12 +25,14 @@ import org.eclipse.cdt.visualizer.ui.plugin.CDTVisualizerUIPlugin;
 import org.eclipse.cdt.visualizer.ui.util.GUIUtils;
 import org.eclipse.cdt.visualizer.ui.util.MouseMonitor;
 import org.eclipse.cdt.visualizer.ui.util.SelectionManager;
+import org.eclipse.cdt.visualizer.ui.util.SelectionUtils;
 import org.eclipse.cdt.visualizer.ui.util.Timer;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
 
@@ -83,14 +85,11 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
     /** Mouse-drag marquee graphic element */
     protected MulticoreVisualizerMarquee m_marquee = null;
     
+    /** Last mouse down/up point, for shift-click selections. */
+    protected Point m_lastSelectionClick = new Point(0,0);
+    
 	/** Mouse click/drag monitor */
     protected MouseMonitor m_mouseMonitor = null;
-	
-    /** Currently selected threads, if any.
-     *  (Used to restore selection whenever we need to
-     *   recreate thread graphic display objects.)
-     */
-    protected HashSet<Integer> m_selectedThreads = null;
 	
 
 	// --- cached repaint state ---
@@ -187,9 +186,6 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 			}
 		};
 		
-		// saved selection, if any
-		m_selectedThreads = new HashSet<Integer>();
-		
 		// selection marquee
 		m_marquee = new MulticoreVisualizerMarquee();
 
@@ -220,10 +216,6 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
         if (m_mouseMonitor != null) {
             m_mouseMonitor.dispose();
             m_mouseMonitor = null;
-	    }
-	    if (m_selectedThreads != null) {
-	    	m_selectedThreads.clear();
-	    	m_selectedThreads = null;
 	    }
 	    if (m_selectionManager != null) {
 	    	m_selectionManager.dispose();
@@ -257,6 +249,12 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 	
 
 	// --- accessors ---
+	
+	/** Gets currently displayed model. */
+	public VisualizerModel getModel()
+	{
+		return m_model;
+	}
 	
 	/** Sets model to display, and requests canvas update. */
 	public void setModel(VisualizerModel model)
@@ -450,9 +448,6 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 		// so we delay clearing/redrawing the canvas until needed,
 		// to minimize any potential visual flickering.
 		
-		// save current selection, if any
-		saveSelection();
-		
 		// recache/resize tiles & shims if needed
 		recache();
 
@@ -479,7 +474,7 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 				MulticoreVisualizerCore mcore = m_coreMap.get(core);
 				if (mcore != null) {
 					MulticoreVisualizerThread mthread =
-						new MulticoreVisualizerThread(mcore, thread.getPID(), thread.getTID(), thread.getState());
+						new MulticoreVisualizerThread(mcore, thread);
 					mcore.addThread(mthread);
 					m_threads.add(mthread);
 					m_threadMap.put(thread, mthread);
@@ -516,7 +511,7 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 			}
 		}
 		
-		// restore selection, if any
+		// restore canvas object highlighting from model object selection
 		restoreSelection();
 
 		// NOW we can clear the background
@@ -576,7 +571,11 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 			boolean toggleSelection = MouseMonitor.isControlDown(keys);
 			
 			selectRegion(m_marquee.getBounds(), addToSelection, toggleSelection);
-	
+
+			// remember last mouse-up point for shift-click selection
+			m_lastSelectionClick.x = x;
+			m_lastSelectionClick.y = y;
+			
 			update();
 			break;
 		}
@@ -593,78 +592,20 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 	
 
 	// --- selection methods ---
-	
-	/**
-	 * Selects item, if any, at specified point.
-	 * 
-	 * If addToSelection is true, appends selected item to current selection,
-	 * if it isn't already selected.
-	 *  
-	 * If toggleSelection is true, toggles selection of specified item,
-	 * without changing selection state of other items.
-	 *  
-	 * Otherwise, selects item if any at point and deselects other items.
-	 */
-	public void selectPoint(int x, int y,
-							boolean addToSelection, boolean toggleSelection)
-	{
-		// Currently we only allow selection of threads.
-		if (m_threads != null) {
 
-			MulticoreVisualizerThread thread = null;
-
-			// first see if selection click landed on a thread dot.
-			for (MulticoreVisualizerThread tobj : m_threads) {
-				if (tobj.contains(x,y)) {
-					thread = tobj;
-					break;
-				}
-			}
-			
-			// if not, see if it landed on a core with only one thread
-			if (thread == null) {
-				for (MulticoreVisualizerCore tobj : m_cores) {
-					if (tobj.contains(x,y)) {
-						List<MulticoreVisualizerThread> threads = tobj.getThreads();
-						if (threads.size() == 1) {
-							thread = threads.get(0);
-							break;
-						}
-					}
-				}
-			}
-
-			if (! toggleSelection) {
-				for (MulticoreVisualizerThread tobj : m_threads) {
-					if (tobj != thread) {
-						tobj.setSelected(false);
-					}
-				}
-			}
-
-			if (thread != null) {
-				if (toggleSelection) {
-					thread.setSelected(! thread.isSelected());
-				}
-				else {
-					thread.setSelected(true);
-				}
-			}
-
-			selectionChanged();
-		}
-	}
-	
 	/**
 	 * Selects item(s), if any, in specified region
 	 * 
-	 * If addToSelection is true, appends selected item(s) to current selection,
-	 * that aren't already selected.
-	 *  
-	 * If toggleSelection is true, toggles selection of specified item(s),
+	 * If addToSelection is true, appends item(s) to current selection
 	 * without changing selection state of other items.
 	 *  
-	 * Otherwise, selects item(s) if any in region and deselects other items.
+	 * If toggleSelection is true, toggles selection of item(s)
+	 * without changing selection state of other items.
+	 * 
+	 * If both are true, deselects item(s)
+	 * without changing selection state of other items.
+	 *  
+	 * Otherwise, selects item(s) and deselects other items.
 	 */
 	public void selectRegion(Rectangle region,
 							 boolean addToSelection, boolean toggleSelection)
@@ -672,25 +613,142 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 		// currently, we select/deselect threads, not processes or tiles
 		if (m_threads != null) {
 
+			boolean changed = false;
+			
 			for (MulticoreVisualizerThread tobj : m_threads) {
-				
 				boolean within = tobj.isWithin(region);
-				if (! addToSelection || within) {
-					if (toggleSelection) {
-						if (within)
-							tobj.setSelected(! tobj.isSelected());
+
+				if (addToSelection && toggleSelection) {
+					if (within) {
+						tobj.setSelected(false);
+						changed = true;
 					}
-					else {
-						tobj.setSelected(within);
+				}
+				else if (addToSelection) {
+					if (within) {
+						tobj.setSelected(true);
+						changed = true;
+					}
+				}
+				else if (toggleSelection) {
+					if (within) {
+						tobj.setSelected(! tobj.isSelected());
+						changed = true;
+					}
+				}
+				else {
+					tobj.setSelected(within);
+					changed = true;
+				}
+			}
+
+			if (changed)
+				selectionChanged();
+		}
+	}
+	
+	/**
+	 * Selects item(s), if any, at specified point.
+	 * 
+	 * If addToSelection is true, appends item(s) to current selection
+	 * without changing selection state of other items.
+	 *  
+	 * If toggleSelection is true, toggles selection of item(s)
+	 * without changing selection state of other items.
+	 * 
+	 * If both are true, deselects item(s)
+	 * without changing selection state of other items.
+	 *  
+	 * Otherwise, selects item(s) and deselects other items.
+	 */
+	public void selectPoint(int x, int y,
+							boolean addToSelection, boolean toggleSelection)
+	{
+		// Currently we only allow selection of threads.
+		if (m_threads != null) {
+
+			List<MulticoreVisualizerThread> threads = new ArrayList<MulticoreVisualizerThread>();
+			
+			// first see if selection click landed on a thread dot.
+			for (MulticoreVisualizerThread tobj : m_threads) {
+				if (tobj.contains(x,y)) {
+					threads.add(tobj);
+					break;
+				}
+			}
+			
+			// if not, see if it landed on a core; if so, select its threads
+			if (threads.isEmpty()) {
+				for (MulticoreVisualizerCore tobj : m_cores) {
+					if (tobj.contains(x,y)) {
+						List<MulticoreVisualizerThread> corethreads = tobj.getThreads();
+						threads.addAll(corethreads);
+						break;
 					}
 				}
 			}
 			
-			selectionChanged();
+			// in addToSelection case, include any threads in region
+			// bracketed by last selection click and current click
+			// (with some extra slop added so we pick up threads that
+			// overlap the edge of this region)
+			if (addToSelection) {
+				int spotSize = MulticoreVisualizerThread.THREAD_SPOT_SIZE * 3;
+				Rectangle r1 = new Rectangle(m_lastSelectionClick.x - spotSize/2,
+										 	 m_lastSelectionClick.y - spotSize/2,
+										 	spotSize, spotSize);
+				Rectangle r2 = new Rectangle(x - spotSize/2, y - spotSize/2, spotSize, spotSize);
+				Rectangle region = r1.union(r2);
+				
+				for (MulticoreVisualizerThread tobj : m_threads) {
+					if (tobj.isWithin(region)) {
+						threads.add(tobj);
+					}
+				}
+			}
+			
+			boolean changed = false;
+
+			for (MulticoreVisualizerThread tobj : m_threads) {
+				boolean within = threads.contains(tobj);
+
+				if (addToSelection && toggleSelection) {
+					if (within) {
+						tobj.setSelected(false);
+						changed = true;
+					}
+				}
+				else if (addToSelection) {
+					if (within) {
+						tobj.setSelected(true);
+						changed = true;
+					}
+				}
+				else if (toggleSelection) {
+					if (within) {
+						tobj.setSelected(! tobj.isSelected());
+						changed = true;
+					}
+				}
+				else {
+					tobj.setSelected(within);
+					changed = true;
+				}
+			}
+
+			if (changed)
+				selectionChanged();
 		}
+		
+		// remember last mouse-up point for shift-click selection
+		m_lastSelectionClick.x = x;
+		m_lastSelectionClick.y = y;
 	}
 	
-	/** Clears tile selection. */
+	
+	// --- selection management methods ---
+		
+	/** Clears selection. */
 	public void clearSelection() {
 		// currently, we select/deselect threads, not processes or tiles
 		if (m_threads != null) {
@@ -703,9 +761,6 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 		}
 	}
 	
-	
-	// --- selection management methods ---
-		
 	/** Things to do whenever the selection changes. */
 	protected void selectionChanged() {
 		selectionChanged(true);
@@ -713,51 +768,38 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 
 	/** Things to do whenever the selection changes. */
 	protected void selectionChanged(boolean raiseEvent) {
-		saveSelection();
-		requestUpdate();
-		// NOTE: we update the exposed selection now,
-		// and let the canvas update its display on the next "tick".
+		// Note: we save selection (and raise event) now,
+		// and let canvas "catch up" on its next update tick.
 		updateSelection(raiseEvent);
+		requestUpdate();
 	}
 
-	/** Saves current selection
-	 *  (i.e. as internal mementos, which we can use to re-select objects below.) */
-	protected void saveSelection() {
-		if (m_selectedThreads != null) {
-			m_selectedThreads.clear();
-			if (m_threads != null) {
-				for (MulticoreVisualizerThread tobj : m_threads) {
-					if (tobj.isSelected()) {
-						int tid = tobj.getTID();
-						m_selectedThreads.add(tid);
-					}
+	/** Saves current canvas selection as list of model objects. */
+	protected void updateSelection(boolean raiseEvent) {
+		// get model objects (if any) corresponding to canvas selection
+		HashSet<VisualizerThread> selectedThreads = new HashSet<VisualizerThread>();
+		if (m_threads != null) {
+			for (MulticoreVisualizerThread tobj : m_threads) {
+				if (tobj.isSelected()) {
+					selectedThreads.add(tobj.getThread());
 				}
 			}
 		}
+		
+		// update model object selection
+		ISelection selection = SelectionUtils.toSelection(selectedThreads);
+		setSelection(selection, raiseEvent);
 	}
 	
-	/** Restores current selection from saved state. */
+	/** Restores current selection from saved list of model objects. */
 	protected void restoreSelection() {
-		if (m_selectedThreads != null && m_threads != null) {
+		ISelection selection = getSelection();
+		List<Object> selectedThreads = SelectionUtils.getSelectedObjects(selection);
+		if (m_threads != null) {
 			for (MulticoreVisualizerThread tobj : m_threads) {
-				int tid = tobj.getTID();
-				tobj.setSelected(m_selectedThreads.contains(tid));
+				tobj.setSelected(selectedThreads.contains(tobj.getThread()));
 			}
 		}
-	}
-	
-	/**
-	 * Converts current thread selection to ISelection
-	 * and reports a selection changed event.
-	 */
-	protected void updateSelection(boolean raiseEvent) {
-		// TODO: decide what we expose as the canvas's selection.
-		/*
-		if (m_selectedThreads != NULL) {
-			ISelection selection = SelectionUtils.toSelection(m_selectedThreads);
-			setSelection(selection, raiseEvent);
-		}
-		*/
 	}
 	
 	
