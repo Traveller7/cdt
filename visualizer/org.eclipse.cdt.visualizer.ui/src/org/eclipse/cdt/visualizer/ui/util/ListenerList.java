@@ -1,11 +1,3 @@
-// ===========================================================================
-// ListenerList.java -- Base class for event listener lists
-// ===========================================================================
-// Copyright (C) 2009, Tilera Corporation. All rights reserved.
-// Use is subject to license terms.
-// ===========================================================================
-
-// NOTE: When we contribute this to CDT, delete above header and use this one:
 /*******************************************************************************
  * Copyright (c) 2009, Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials

@@ -1,11 +1,3 @@
-// ===========================================================================
-// CDTVisualizerCorePlugin.java -- CDT Visualizer core plugin class.
-// ===========================================================================
-// Copyright (C) 2011, Tilera Corporation. All rights reserved.
-// Use is subject to license terms.
-// ===========================================================================
-
-// NOTE: When we contribute this to CDT, delete above header and use this one:
 /*******************************************************************************
  * Copyright (c) 2011 Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials
