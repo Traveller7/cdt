@@ -143,8 +143,17 @@ public class MulticoreVisualizerEventListener {
 								
 								int pid = Integer.parseInt(processContext.getProcId());
 								int tid = execDmc.getThreadId();
+								
+								int osTid = 0;
+								try {
+									osTid = Integer.parseInt(data.getId());
+								} catch (NumberFormatException e) {
+									// I've seen a case at startup where GDB is not ready to
+									// return the osTID so we get null.  
+									// That is ok, we'll be refreshing right away at startup
+								}
 
-								fVisualizer.getModel().addThread(new VisualizerThread(vCore, pid, tid, VisualizerExecutionState.RUNNING));
+								fVisualizer.getModel().addThread(new VisualizerThread(vCore, pid, osTid, tid, VisualizerExecutionState.RUNNING));
 								
 								fVisualizer.getMulticoreVisualizerCanvas().requestUpdate();
 							}

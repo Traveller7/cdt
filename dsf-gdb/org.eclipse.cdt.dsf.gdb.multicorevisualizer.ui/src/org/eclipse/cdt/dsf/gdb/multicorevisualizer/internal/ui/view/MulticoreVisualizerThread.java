@@ -144,7 +144,7 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 			
 			// if it has an associated debugger, add a marker
 			// (for now, every thread is debugged.)
-			GUIUtils.drawText(gc, "D", x+w, y-8); //$NON-NLS-1$
+//			GUIUtils.drawText(gc, "D", x+w, y-8); //$NON-NLS-1$
 			
 			// draw TID
 			String displayTID = Integer.toString(m_thread.getTID());

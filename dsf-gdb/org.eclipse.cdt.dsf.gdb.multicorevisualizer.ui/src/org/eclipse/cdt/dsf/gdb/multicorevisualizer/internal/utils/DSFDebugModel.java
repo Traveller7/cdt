@@ -226,38 +226,61 @@ public class DSFDebugModel {
 		);
 	}
 	
+	/** Requests data of a thread.
+	 *  Calls back to getThreadDataDone() on listener. */
+	@ConfinedToDsfExecutor("getSession().getExecutor()")
+	public static void getThreadData(DSFSessionState sessionState,
+			                         final ICPUDMContext cpuContext,
+			                         final ICoreDMContext coreContext,
+			                         final IMIExecutionDMContext execContext,
+			                         final DSFDebugModelListener listener,
+			                         final Object arg)
+	{
+		IProcesses procService = sessionState.getService(IProcesses.class);
+
+		if (procService == null) {
+			listener.getThreadDataDone(cpuContext, coreContext, execContext, null, arg);
+			return;
+		}
+
+		final IThreadDMContext threadContext = DMContexts.getAncestorOfType(execContext, IThreadDMContext.class);
+		procService.getExecutionData(threadContext, 
+				new ImmediateDataRequestMonitor<IThreadDMData>() {
+			@Override
+			protected void handleCompleted() {
+				IThreadDMData threadData = isSuccess() ? getData() : null;
+				listener.getThreadDataDone(cpuContext, coreContext, execContext, threadData, arg);
+			}
+		});
+
+	}
+
 	/** Requests execution state of a thread.
 	 *  Calls back to getThreadExecutionStateDone() on listener. */
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public static void getThreadExecutionState(DSFSessionState sessionState,
-			                                   ICPUDMContext cpuContext,
-			                                   ICoreDMContext coreContext,
-			                                   IMIExecutionDMContext threadContext,
-			                                   DSFDebugModelListener listener,
-			                                   Object arg)
+			                                   final ICPUDMContext cpuContext,
+			                                   final ICoreDMContext coreContext,
+			                                   final IMIExecutionDMContext execContext,
+			                                   final IThreadDMData threadData,
+			                                   final DSFDebugModelListener listener,
+			                                   final Object arg)
 	{
 		IRunControl runControl = sessionState.getService(IRunControl.class);
 
 		if (runControl == null) {
-			listener.getThreadExecutionStateDone(cpuContext, coreContext, threadContext, null, arg);
+			listener.getThreadExecutionStateDone(cpuContext, coreContext, execContext, threadData, null, arg);
 			return;
 		}
 
-		final ICPUDMContext  cpuContext_f           = cpuContext;
-		final ICoreDMContext coreContext_f          = coreContext;
-		final IMIExecutionDMContext threadContext_f = threadContext;
-		final DSFDebugModelListener listener_f      = listener;
-		final Object arg_f                          = arg;
-
-		
-		if (runControl.isSuspended(threadContext_f) == false) {
+		if (runControl.isSuspended(execContext) == false) {
 			// The thread is running
-			listener_f.getThreadExecutionStateDone(cpuContext_f, coreContext_f, threadContext_f, 
-					                               VisualizerExecutionState.RUNNING, arg_f);
+			listener.getThreadExecutionStateDone(cpuContext, coreContext, execContext, threadData,
+					                               VisualizerExecutionState.RUNNING, arg);
 		} else {
 			// For a suspended thread, let's see why it is suspended,
 			// to find out if the thread is crashed
-			runControl.getExecutionData(threadContext_f, 
+			runControl.getExecutionData(execContext, 
 					new ImmediateDataRequestMonitor<IExecutionDMData>() {
 				@Override
 				protected void handleCompleted() {
@@ -278,7 +301,7 @@ public class DSFDebugModel {
 						}
 					}
 					
-					listener_f.getThreadExecutionStateDone(cpuContext_f, coreContext_f, threadContext_f, state, arg_f);
+					listener.getThreadExecutionStateDone(cpuContext, coreContext, execContext, threadData, state, arg);
 				}
 			});
 		}

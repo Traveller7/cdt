@@ -19,6 +19,7 @@ import org.eclipse.cdt.dsf.concurrent.ConfinedToDsfExecutor;
 import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
 import org.eclipse.cdt.dsf.datamodel.DMContexts;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
+import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMData;
 import org.eclipse.cdt.dsf.gdb.launching.GDBProcess;
 import org.eclipse.cdt.dsf.gdb.launching.GdbLaunch;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCPU;
@@ -605,9 +606,9 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 				IMIExecutionDMContext execContext =
 					DMContexts.getAncestorOfType(threadContext, IMIExecutionDMContext.class);
 
-				// Don't add the thread to the model just yet, let's wait until we have its execution state.
-				// Collect thread execution state
-				DSFDebugModel.getThreadExecutionState(m_sessionState, cpuContext, coreContext, execContext, this, model);
+				// Don't add the thread to the model just yet, let's wait until we have its data and execution state.
+				// Collect thread data
+				DSFDebugModel.getThreadData(m_sessionState, cpuContext, coreContext, execContext, this, model);
 			}
 			
 		}
@@ -619,9 +620,24 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	
 	/** Invoked when getThreads() request completes. */
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
+	public void getThreadDataDone(ICPUDMContext cpuContext,
+			                      ICoreDMContext coreContext,
+			                      IMIExecutionDMContext execContext,
+			                      IThreadDMData threadData,
+			                      Object arg)
+	{
+
+		// Don't add the thread to the model just yet, let's wait until we have its execution state.
+		DSFDebugModel.getThreadExecutionState(m_sessionState, cpuContext, coreContext, execContext, threadData, this, arg);
+	}
+
+	
+	/** Invoked when getThreadExecutionState() request completes. */
+	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public void getThreadExecutionStateDone(ICPUDMContext cpuContext,
 			                                ICoreDMContext coreContext,
 			                                IMIExecutionDMContext execContext,
+			                                IThreadDMData threadData,
 			                                VisualizerExecutionState state,
 			                                Object arg)
 	{
@@ -640,8 +656,9 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 				DMContexts.getAncestorOfType(execContext, IMIProcessDMContext.class);
 		int pid = Integer.parseInt(processContext.getProcId());
 		int tid = execContext.getThreadId();
+		int osTid = Integer.parseInt(threadData.getId());
 
-		model.addThread(new VisualizerThread(core, pid, tid, state));
+		model.addThread(new VisualizerThread(core, pid, osTid, tid, state));
 		
 		// keep track of threads visited
 		done(1, model);

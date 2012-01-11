@@ -7,6 +7,8 @@
  *
  * Contributors:
  *     William R. Swanson (Tilera Corporation) - initial API and implementation
+ *     Marc Khouzam (Ericsson)                 - Added knowledge about execution 
+ *                                               state and os/gdb thread ids
  *******************************************************************************/
 
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model;
@@ -23,9 +25,12 @@ public class VisualizerThread
 	/** Process ID (pid). */
 	protected int m_pid;
 	
-	/** Thread ID (tid). */
+	/** OS Thread ID (tid). */
 	protected int m_tid;
-		
+
+	/** Thread ID as chosen by GDB. */
+	protected int m_gdbtid;
+
 	/** Thread execution state. */
 	protected VisualizerExecutionState m_threadState;
 
@@ -33,10 +38,11 @@ public class VisualizerThread
 	// --- constructors/destructors ---
 
 	/** Constructor. */
-	public VisualizerThread(VisualizerCore core, int pid, int tid, VisualizerExecutionState state) {
+	public VisualizerThread(VisualizerCore core, int pid, int tid, int gdbtid, VisualizerExecutionState state) {
 		m_core = core;
 		m_pid = pid;
 		m_tid = tid;
+		m_gdbtid = gdbtid;
 		m_threadState = state;
 	}
 	
@@ -56,7 +62,8 @@ public class VisualizerThread
 			VisualizerThread v = (VisualizerThread) obj;
 			result = (
 				v.m_pid == m_pid &&
-				v.m_tid == m_tid
+				v.m_tid == m_tid &&
+				v.m_gdbtid == m_gdbtid
 			);
 		}
 		return result;
@@ -66,7 +73,8 @@ public class VisualizerThread
 	@Override
 	public String toString() {
 		StringBuffer output = new StringBuffer();
-		output.append(m_core).append(",Proc:").append(m_pid).append(",Thread:").append(m_tid);  //$NON-NLS-1$//$NON-NLS-2$
+		output.append(m_core).append(",Proc:").append(m_pid) //$NON-NLS-1$
+		      .append(",Thread:(").append(m_tid).append(",").append(m_gdbtid).append(")");  //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$
 		return output.toString();
 	}
 
@@ -83,7 +91,7 @@ public class VisualizerThread
 	}
 
 	/** Returns true if this is the "process" thread, i.e.
-	 *  its PID and TID are the same.
+	 *  its PID and OS TID are the same.
 	 */
 	public boolean isProcessThread()
 	{
@@ -98,6 +106,11 @@ public class VisualizerThread
 	/** Gets thread id (tid). */
 	public int getTID()	{
 		return m_tid;
+	}
+
+	/** Gets gdb thread id. */
+	public int getGDBTID()	{
+		return m_gdbtid;
 	}
 
 	/** Gets thread execution state. */

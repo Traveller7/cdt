@@ -13,6 +13,7 @@ package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.utils;
 
 
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
+import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMData;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerExecutionState;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICPUDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICoreDMContext;
@@ -36,10 +37,18 @@ public interface DSFDebugModelListener {
 							   IDMContext[] threadContexts,
 							   Object arg);
 
+	/** Invoked when getThreadDataState() request completes. */
+	public void getThreadDataDone(ICPUDMContext cpuContext,
+			ICoreDMContext coreContext,
+			IMIExecutionDMContext threadContext,
+			IThreadDMData data,
+			Object arg);
+
 	/** Invoked when getThreadExecutionState() request completes. */
 	public void getThreadExecutionStateDone(ICPUDMContext cpuContext,
 			 				                ICoreDMContext coreContext,
 							                IMIExecutionDMContext threadContext,
+							                IThreadDMData threadData,
 							                VisualizerExecutionState state,
 							                Object arg);
 
