@@ -121,7 +121,9 @@ public class GraphicObject
 	/** Gets x location of this element */
 	public int getX() { return m_bounds.x; }
 	/** Sets x location of this element */
-	public void setX(int x) { m_bounds.x = x; }
+	public void setX(int x) { 
+		m_bounds.x = x; 
+	}
 
 	/** Gets y location of this element */
 	public int getY() { return m_bounds.y; }

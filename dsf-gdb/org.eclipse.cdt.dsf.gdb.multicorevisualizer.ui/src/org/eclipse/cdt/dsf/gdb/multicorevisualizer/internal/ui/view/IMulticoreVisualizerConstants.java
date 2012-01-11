@@ -35,6 +35,9 @@ public class IMulticoreVisualizerConstants
 	/** Color to be used to draw an exited thread (if they are being shown) */
 	public static final Color COLOR_EXITED_THREAD = Colors.GRAY;
 
+	/** Color to be used to draw an highlight for the process thread */
+	public static final Color COLOR_PROCESS_THREAD = Colors.WHITE;
+
 	// Colors for drawing cores
 	
 	/** Color to be used to draw a running core */
@@ -46,5 +49,14 @@ public class IMulticoreVisualizerConstants
 	/** Color to be used to draw a crashed core */
 	public static final Color COLOR_CRASHED_CORE_FG = Colors.RED;
 	public static final Color COLOR_CRASHED_CORE_BG = Colors.DARK_RED;
+	
+	// Colors for text
 
+	/** Color to be used to draw a the text for a thread */
+	public static final Color COLOR_THREAD_TEXT_FG = Colors.WHITE; 
+	public static final Color COLOR_THREAD_TEXT_BG = Colors.BLACK;
+
+	/** Color to be used to draw a the text for a core */
+	public static final Color COLOR_CORE_TEXT_FG = Colors.WHITE; 
+	public static final Color COLOR_CORE_TEXT_BG = Colors.BLACK;
 }

@@ -133,14 +133,18 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 			gc.setAlpha(255);
 			gc.fillOval(x+step2, y+step2, w-step2*2, h-step2*2);
 
-			// draw text annotations
-			gc.setBackground(Colors.BLACK);
-			gc.setForeground(Colors.WHITE);
-			
 			// special case: for the "process" thread, draw an enclosing circle
 			if (m_thread.isProcessThread()) {
-				gc.drawOval(x,y,w,h);
+				// Substract one from the width and height
+				// in the case of drawOval because that method
+				// adds a pixel to each value for some reason
+				gc.setForeground(IMulticoreVisualizerConstants.COLOR_PROCESS_THREAD);
+				gc.drawOval(x,y,w-1,h-1);
 			}
+
+			// draw text annotations
+			gc.setBackground(IMulticoreVisualizerConstants.COLOR_THREAD_TEXT_BG);
+			gc.setForeground(IMulticoreVisualizerConstants.COLOR_THREAD_TEXT_FG);
 			
 			// if it has an associated debugger, add a marker
 			// (for now, every thread is debugged.)
