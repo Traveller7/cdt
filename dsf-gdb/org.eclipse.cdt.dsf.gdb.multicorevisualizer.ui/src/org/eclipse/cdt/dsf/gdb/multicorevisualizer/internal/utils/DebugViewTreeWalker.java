@@ -112,10 +112,12 @@ public class DebugViewTreeWalker
 		//return m_viewer.getTopElementPath();
 		
 		TreePath path = null;
-		Tree tree = (Tree) m_viewer.getControl();
-		TreeItem[] items = tree.getItems();
-		Object root = (items == null || items.length == 0) ? null : items[0].getData();
-		if (root != null) path = new TreePath(new Object[] {root});
+		if (m_viewer != null) {
+			Tree tree = (Tree) m_viewer.getControl();
+			TreeItem[] items = tree.getItems();
+			Object root = (items == null || items.length == 0) ? null : items[0].getData();
+			if (root != null) path = new TreePath(new Object[] {root});
+		}
 		return path;
 	}
 
