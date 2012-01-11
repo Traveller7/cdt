@@ -158,9 +158,9 @@ public class MulticoreVisualizerCore extends MulticoreVisualizerGraphicObject
 		
 		if (m_bounds.height > 16) {
 			int text_indent = 3;
-			int tx = m_bounds.x + text_indent;
+			int tx = m_bounds.x + m_bounds.width - text_indent;
 			int ty = m_bounds.y + text_indent;
-			GUIUtils.drawText(gc, Integer.toString(m_id), tx, ty);
+			GUIUtils.drawTextAligned(gc, Integer.toString(m_id), tx, ty, false, true);
 		}
 	}
 }
