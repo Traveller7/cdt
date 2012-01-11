@@ -65,12 +65,11 @@ import org.eclipse.cdt.internal.core.dom.parser.cpp.CPPASTName;
 import org.eclipse.cdt.internal.core.dom.parser.cpp.CPPASTSimpleDeclaration;
 import org.eclipse.cdt.internal.core.dom.parser.cpp.CPPMethod;
 
-import org.eclipse.cdt.internal.ui.refactoring.AddDeclarationNodeToClassChange;
+import org.eclipse.cdt.internal.ui.refactoring.ClassMemberInserter;
 import org.eclipse.cdt.internal.ui.refactoring.CRefactoring;
 import org.eclipse.cdt.internal.ui.refactoring.CRefactoringDescription;
 import org.eclipse.cdt.internal.ui.refactoring.MethodContext;
 import org.eclipse.cdt.internal.ui.refactoring.ModificationCollector;
-import org.eclipse.cdt.internal.ui.refactoring.gettersandsetters.GetterSetterNameGenerator;
 import org.eclipse.cdt.internal.ui.refactoring.utils.NodeHelper;
 import org.eclipse.cdt.internal.ui.refactoring.utils.SelectionHelper;
 import org.eclipse.cdt.internal.ui.refactoring.utils.TranslationUnitHelper;
@@ -325,7 +324,7 @@ public class ExtractConstantRefactoring extends CRefactoring {
 
 				if (context.getType() == MethodContext.ContextType.METHOD) {
 					ICPPASTCompositeTypeSpecifier classDefinition = (ICPPASTCompositeTypeSpecifier) context.getMethodDeclaration().getParent();
-					AddDeclarationNodeToClassChange.createChange(classDefinition, info.getVisibility(), getConstNodesClass(constName), true, collector);
+					ClassMemberInserter.createChange(classDefinition, info.getVisibility(), getConstNodesClass(constName), true, collector);
 				} else {
 					IASTDeclaration nodes = getConstNodesGlobal(constName);
 					ASTRewrite rewriter = collector.rewriterForTranslationUnit(ast);

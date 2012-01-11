@@ -112,7 +112,7 @@ public class CScope implements ICScope, IASTInternalScope {
     private IASTNode physicalNode = null;
     private boolean isCached = false;
     
-    private CharArrayObjectMap<?> mapsToNameOrBinding[] = { CharArrayObjectMap.EMPTY_MAP, CharArrayObjectMap.EMPTY_MAP };
+    private final CharArrayObjectMap<?> mapsToNameOrBinding[] = { CharArrayObjectMap.EMPTY_MAP, CharArrayObjectMap.EMPTY_MAP };
 	private final EScopeKind kind;
     
 	public CScope(IASTNode physical, EScopeKind eKind) {
@@ -134,7 +134,7 @@ public class CScope implements ICScope, IASTInternalScope {
     }
 
     protected static class CollectNamesAction extends ASTVisitor {
-        private char[] name;
+        private final char[] name;
         private IASTName[] result = null;
         
         CollectNamesAction(char[] n) {
@@ -148,7 +148,7 @@ public class CScope implements ICScope, IASTInternalScope {
                 prop == IASTCompositeTypeSpecifier.TYPE_NAME ||
                 prop == IASTDeclarator.DECLARATOR_NAME) {
                 if (CharArrayUtils.equals(n.toCharArray(), name))
-                    result = (IASTName[]) ArrayUtil.append(IASTName.class, result, n);    
+                    result = ArrayUtil.append(IASTName.class, result, n);    
             }
             
             return PROCESS_CONTINUE; 
@@ -162,7 +162,7 @@ public class CScope implements ICScope, IASTInternalScope {
         }
 
         public IASTName[] getNames() {
-            return (IASTName[]) ArrayUtil.trim(IASTName.class, result);
+            return ArrayUtil.trim(IASTName.class, result);
         }
     }
     
@@ -221,7 +221,7 @@ public class CScope implements ICScope, IASTInternalScope {
 				if (n == name)
 					return;
 			}
-			final IASTName[] newNames= (IASTName[]) ArrayUtil.append(IASTName.class, names, name);
+			final IASTName[] newNames= ArrayUtil.append(IASTName.class, names, name);
 			if (newNames != names)
 				map.put(nchars, newNames);
 		} else {
@@ -376,7 +376,7 @@ public class CScope implements ICScope, IASTInternalScope {
         
 		for (Object element : obj) {
 			if (element instanceof IBinding) {
-				result = (IBinding[]) ArrayUtil.append(IBinding.class, result, element);
+				result = ArrayUtil.append(IBinding.class, result, (IBinding) element);
 			} else {
 				IASTName n= null;
 				if (element instanceof IASTName) {
@@ -392,13 +392,13 @@ public class CScope implements ICScope, IASTInternalScope {
 						}
 					}
 					if (b != null) {
-						result = (IBinding[]) ArrayUtil.append(IBinding.class, result, b);
+						result = ArrayUtil.append(IBinding.class, result, b);
 					}
 				}
 			}
 		}
 
-        return (IBinding[]) ArrayUtil.trim(IBinding.class, result);
+        return ArrayUtil.trim(IBinding.class, result);
     }
     
     /**

@@ -47,7 +47,7 @@ import org.eclipse.cdt.core.model.ICProject;
 import org.eclipse.cdt.internal.core.dom.rewrite.astwriter.ContainerNode;
 
 import org.eclipse.cdt.internal.ui.refactoring.CRefactoring2;
-import org.eclipse.cdt.internal.ui.refactoring.AddDeclarationNodeToClassChange;
+import org.eclipse.cdt.internal.ui.refactoring.ClassMemberInserter;
 import org.eclipse.cdt.internal.ui.refactoring.Container;
 import org.eclipse.cdt.internal.ui.refactoring.ModificationCollector;
 import org.eclipse.cdt.internal.ui.refactoring.RefactoringASTCache;
@@ -159,7 +159,7 @@ public class GenerateGettersAndSettersRefactoring extends CRefactoring2 {
 		if (compositeTypeSpecifier != null) {
 			findDeclarations(compositeTypeSpecifier);
 		} else {
-			initStatus.addFatalError(Messages.GenerateGettersAndSettersRefactoring_NoCassDefFound);
+			initStatus.addFatalError(Messages.GenerateGettersAndSettersRefactoring_NoClassDefFound);
 		}
 	}
 	
@@ -173,7 +173,7 @@ public class GenerateGettersAndSettersRefactoring extends CRefactoring2 {
 
 	private IASTCompositeTypeSpecifier getCompositeTypeSpecifier(IASTName selectedName) {
 		IASTNode node = selectedName;
-		while(node != null && !(node instanceof IASTCompositeTypeSpecifier)) {
+		while (node != null && !(node instanceof IASTCompositeTypeSpecifier)) {
 			node = node.getParent();
 		}
 		return (IASTCompositeTypeSpecifier) node;
@@ -181,7 +181,7 @@ public class GenerateGettersAndSettersRefactoring extends CRefactoring2 {
 
 	private IASTName getSelectedName(IASTTranslationUnit ast) {
 		List<IASTName> names = findAllMarkedNames(ast);
-		if (names.size() < 1) {
+		if (names.isEmpty()) {
 			return null;
 		}
 		return names.get(names.size() - 1);
@@ -226,21 +226,21 @@ public class GenerateGettersAndSettersRefactoring extends CRefactoring2 {
 	}
 
 	@Override
-	protected void collectModifications(IProgressMonitor pm,ModificationCollector collector)
+	protected void collectModifications(IProgressMonitor pm, ModificationCollector collector)
 			throws CoreException, OperationCanceledException {
 		List<IASTNode> getterAndSetters = new ArrayList<IASTNode>();
 		List<IASTFunctionDefinition> definitions = new ArrayList<IASTFunctionDefinition>();
-		for (GetterSetterInsertEditProvider currentProvider : context.selectedFunctions) {
+		for (AccessorDescriptor accessor : context.selectedAccessors) {
 			if (context.isDefinitionSeparate()) {
-				getterAndSetters.add(currentProvider.getFunctionDeclaration());
-				IASTFunctionDefinition functionDefinition = currentProvider.getFunctionDefinition(true);
+				getterAndSetters.add(accessor.getAccessorDeclaration());
+				IASTFunctionDefinition functionDefinition = accessor.getAccessorDefinition(true);
 				// Standalone definitions in a header file have to be declared inline. 
 				if (definitionInsertLocation.getTranslationUnit().isHeaderUnit()) {
 					functionDefinition.getDeclSpecifier().setInline(true);
 				}
 				definitions.add(functionDefinition);
 			} else {
-				getterAndSetters.add(currentProvider.getFunctionDefinition(false));
+				getterAndSetters.add(accessor.getAccessorDefinition(false));
 			}
 		}
 		if (context.isDefinitionSeparate()) {
@@ -249,7 +249,7 @@ public class GenerateGettersAndSettersRefactoring extends CRefactoring2 {
 		ICPPASTCompositeTypeSpecifier classDefinition =
 				(ICPPASTCompositeTypeSpecifier) context.existingFields.get(context.existingFields.size() - 1).getParent();
 
-		AddDeclarationNodeToClassChange.createChange(classDefinition, VisibilityEnum.v_public,
+		ClassMemberInserter.createChange(classDefinition, VisibilityEnum.v_public,
 				getterAndSetters, false, collector);
 	}
 

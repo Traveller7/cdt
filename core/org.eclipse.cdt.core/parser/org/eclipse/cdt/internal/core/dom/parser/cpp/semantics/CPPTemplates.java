@@ -98,6 +98,7 @@ import org.eclipse.cdt.internal.core.dom.parser.ASTQueries;
 import org.eclipse.cdt.internal.core.dom.parser.IASTInternalScope;
 import org.eclipse.cdt.internal.core.dom.parser.ITypeContainer;
 import org.eclipse.cdt.internal.core.dom.parser.ProblemBinding;
+import org.eclipse.cdt.internal.core.dom.parser.ProblemType;
 import org.eclipse.cdt.internal.core.dom.parser.Value;
 import org.eclipse.cdt.internal.core.dom.parser.cpp.CPPASTName;
 import org.eclipse.cdt.internal.core.dom.parser.cpp.CPPArrayType;
@@ -530,9 +531,9 @@ public class CPPTemplates {
 
 			while (parent.getParent() instanceof ICPPASTTemplateDeclaration) {
 				parent = parent.getParent();
-				templates = (ICPPASTTemplateDeclaration[]) ArrayUtil.append(ICPPASTTemplateDeclaration.class, templates, parent);
+				templates = ArrayUtil.append(ICPPASTTemplateDeclaration.class, templates, (ICPPASTTemplateDeclaration) parent);
 			}
-			templates = (ICPPASTTemplateDeclaration[]) ArrayUtil.trim(ICPPASTTemplateDeclaration.class, templates);
+			templates = ArrayUtil.trim(ICPPASTTemplateDeclaration.class, templates);
 
 			ICPPASTTemplateDeclaration templateDeclaration = templates[0];
 			IASTDeclaration decl = templateDeclaration.getDeclaration();
@@ -676,10 +677,14 @@ public class CPPTemplates {
 					if (argsAreTrivial(classTemplate.getTemplateParameters(), args)) {
 						result= classTemplate;  
 					} else {
+						args= addDefaultArguments(classTemplate, args);
+						if (args == null) {
+							return new ProblemBinding(id, IProblemBinding.SEMANTIC_INVALID_TEMPLATE_ARGUMENTS, templateName.toCharArray());
+						}							
 						ICPPClassTemplatePartialSpecialization partialSpec= findPartialSpecialization(classTemplate, args);
 						if (isDeclaration || isDefinition) {
 							if (partialSpec == null) {
-								partialSpec = new CPPClassTemplatePartialSpecialization(id);
+								partialSpec = new CPPClassTemplatePartialSpecialization(id, args);
 								if (template instanceof ICPPInternalClassTemplate)
 									((ICPPInternalClassTemplate) template).addPartialSpecialization(partialSpec);
 								return partialSpec;
@@ -1143,7 +1148,7 @@ public class CPPTemplates {
 					IType newMemberOfClass = instantiateType(memberOfClass, tpMap, packOffset, within);
 					if (!(newMemberOfClass instanceof ICPPClassType || newMemberOfClass instanceof UniqueType 
 							|| newMemberOfClass instanceof ICPPUnknownBinding)) {
-						newMemberOfClass = memberOfClass;
+						return new ProblemType(ISemanticProblem.BINDING_INVALID_TYPE);
 					}
 					if (newNestedType != nestedType || newMemberOfClass != memberOfClass) {
 						return new CPPPointerToMemberType(newNestedType, newMemberOfClass,
@@ -2342,6 +2347,8 @@ public class CPPTemplates {
 	            		}
 	            	}
 	            }
+            } else if (t != owner) {
+            	return new ProblemBinding(unknown.getUnknownName(), IProblemBinding.SEMANTIC_BAD_SCOPE);
             }
         }
         

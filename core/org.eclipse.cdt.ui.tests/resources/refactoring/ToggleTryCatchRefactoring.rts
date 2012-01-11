@@ -30,7 +30,6 @@ try {
 catch (std::exception& e1) {
 	return;
 }
-
 //!TestTryCatchFromInHeaderToImplementation
 //#org.eclipse.cdt.ui.tests.refactoring.togglefunction.ToggleRefactoringTest
 //@.config
@@ -57,8 +56,6 @@ catch (std::exception& e1) {
 class A {
 	void member(int a, int b);
 };
-
-
 //@A.cpp
 #include "A.h"
 
@@ -79,7 +76,6 @@ try {
 catch (std::exception& e1) {
 	return;
 }
-
 //!TestTryCatchFromInImplementationToClass
 //#org.eclipse.cdt.ui.tests.refactoring.togglefunction.ToggleRefactoringTest
 //@.config
@@ -102,8 +98,6 @@ int main() {
 //=
 #include <exception>
 #include "A.h"
-
-
 
 int main() {
 	return 0;
@@ -164,7 +158,6 @@ catch (std::exception& e1) {
 catch (std::exception& e2) {
 	return;
 }
-
 //!TestMultipleTryCatchFromInHeaderToImplementation
 //#org.eclipse.cdt.ui.tests.refactoring.togglefunction.ToggleRefactoringTest
 //@.config
@@ -194,8 +187,6 @@ catch (std::exception& e2) {
 class A {
 	void member(int a, int b);
 };
-
-
 //@A.cpp
 #include "A.h"
 
@@ -219,7 +210,6 @@ catch (std::exception& e1) {
 catch (std::exception& e2) {
 	return;
 }
-
 //!TestMultipleTryCatchFromInImplementationToClass
 //#org.eclipse.cdt.ui.tests.refactoring.togglefunction.ToggleRefactoringTest
 //@.config
@@ -245,8 +235,6 @@ int main() {
 //=
 #include <exception>
 #include "A.h"
-
-
 
 int main() {
 	return 0;

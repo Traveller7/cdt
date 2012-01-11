@@ -13,7 +13,11 @@
  *******************************************************************************/
 package org.eclipse.cdt.internal.core.dom.parser.cpp.semantics;
 
-import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.*;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.ALLCVQ;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.CVTYPE;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.TDEF;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.getNestedType;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.getUltimateTypeUptoPointers;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,6 +52,7 @@ import org.eclipse.cdt.core.dom.ast.IASTFunctionDeclarator;
 import org.eclipse.cdt.core.dom.ast.IASTFunctionDefinition;
 import org.eclipse.cdt.core.dom.ast.IASTGotoStatement;
 import org.eclipse.cdt.core.dom.ast.IASTIdExpression;
+import org.eclipse.cdt.core.dom.ast.IASTImplicitName;
 import org.eclipse.cdt.core.dom.ast.IASTImplicitNameOwner;
 import org.eclipse.cdt.core.dom.ast.IASTInitializer;
 import org.eclipse.cdt.core.dom.ast.IASTInitializerClause;
@@ -151,7 +156,6 @@ import org.eclipse.cdt.core.index.IIndexBinding;
 import org.eclipse.cdt.core.parser.util.ArrayUtil;
 import org.eclipse.cdt.core.parser.util.CharArrayUtils;
 import org.eclipse.cdt.internal.core.dom.parser.ASTInternal;
-import org.eclipse.cdt.internal.core.dom.parser.ASTNode;
 import org.eclipse.cdt.internal.core.dom.parser.ASTQueries;
 import org.eclipse.cdt.internal.core.dom.parser.ProblemBinding;
 import org.eclipse.cdt.internal.core.dom.parser.ProblemType;
@@ -201,14 +205,16 @@ public class CPPVisitor extends ASTQueries {
 	private static final CPPBasicType UNSIGNED_LONG = new CPPBasicType(Kind.eInt, IBasicType.IS_LONG | IBasicType.IS_UNSIGNED);
 	private static final CPPBasicType INT_TYPE = new CPPBasicType(Kind.eInt, 0);
 
-	private static final String BEGIN_STR = "begin"; //$NON-NLS-1$
-	static final char[] BEGIN = BEGIN_STR.toCharArray(); 
+	public static final String BEGIN_STR = "begin"; //$NON-NLS-1$
+	public static final char[] BEGIN = BEGIN_STR.toCharArray(); 
+	public static final char[] END = "end".toCharArray();  //$NON-NLS-1$
 	static final String STD = "std"; //$NON-NLS-1$
 	private static final char[] SIZE_T = "size_t".toCharArray(); //$NON-NLS-1$
 	private static final char[] PTRDIFF_T = "ptrdiff_t".toCharArray(); //$NON-NLS-1$
 	private static final char[] TYPE_INFO= "type_info".toCharArray(); //$NON-NLS-1$
 	private static final char[] INITIALIZER_LIST = "initializer_list".toCharArray(); //$NON-NLS-1$
-	private static final IASTInitializerClause[] NO_ARGS = {};
+	private static final char[][] EMPTY_CHAR_ARRAY_ARRAY = {};
+	public static final IASTInitializerClause[] NO_ARGS = {};
 
 	// Thread-local set of DeclSpecifiers for which auto types are being created.
 	// Used to prevent infinite recursion while processing invalid self-referencing
@@ -1925,22 +1931,23 @@ public class CPPVisitor extends ASTQueries {
 				IType type= SemanticUtil.getNestedType(expr.getExpressionType(), TDEF|CVTYPE);
 				if (type instanceof IArrayType) {
 					beginExpr= expr.copy();
-				} else if (type instanceof ICPPClassType) {
-					ICPPClassType ct= (ICPPClassType) type;
-					if (ct.getCompositeScope().find(BEGIN_STR).length > 0) {
-						final CPPASTName name = new CPPASTName(BEGIN);
-						name.setOffset(((ASTNode) forInit).getOffset());
-						beginExpr= new CPPASTFunctionCallExpression(
-								new CPPASTFieldReference(name, expr.copy()), NO_ARGS);
-					}
-				}
+				} 
 			}
 			if (beginExpr == null) {
-				final CPPASTName name = new CPPASTName(BEGIN);
-				name.setOffset(((ASTNode) forInit).getOffset());
-				beginExpr= new CPPASTFunctionCallExpression(
-						new CPPASTIdExpression(name),
-						new IASTInitializerClause[] { forInit.copy() });
+				IASTImplicitName[] implicits= forStmt.getImplicitNames();
+				if (implicits.length > 0) {
+					IBinding b= implicits[0].getBinding();
+					CPPASTName name= new CPPASTName();
+					name.setBinding(b);
+					if (b instanceof ICPPMethod) {
+						beginExpr= new CPPASTFunctionCallExpression(
+								new CPPASTFieldReference(name, null), NO_ARGS);
+					} else {
+						beginExpr= new CPPASTFunctionCallExpression(new CPPASTIdExpression(name), NO_ARGS);
+					}
+				} else {
+					return new ProblemType(ISemanticProblem.TYPE_CANNOT_DEDUCE_AUTO_TYPE);
+				}
 			}
 			autoInitClause= new CPPASTUnaryExpression(IASTUnaryExpression.op_star, beginExpr);
 			autoInitClause.setParent(forStmt);
@@ -2287,9 +2294,9 @@ public class CPPVisitor extends ASTQueries {
 		    	continue;
 		    }
 		
-		    ns = (String[]) ArrayUtil.append(String.class, ns, n);
+		    ns = ArrayUtil.append(String.class, ns, n);
 		}
-        ns = (String[]) ArrayUtil.trim(String.class, ns);
+        ns = ArrayUtil.trim(String.class, ns);
         String[] result = new String[ns.length + 1];
         for (int i = ns.length - 1; i >= 0; i--) {
             result[ns.length - i - 1] = ns[i];
@@ -2299,7 +2306,8 @@ public class CPPVisitor extends ASTQueries {
 	}
 	
 	public static char[][] getQualifiedNameCharArray(IBinding binding) {
-		char[][] ns = null;
+		char[][] ns = EMPTY_CHAR_ARRAY_ARRAY;
+		ns = ArrayUtil.append(ns, binding.getNameCharArray());
 		for (IBinding owner= binding.getOwner(); owner != null; owner= owner.getOwner()) {
 			char[] n= owner.getNameCharArray();
 			if (n == null)
@@ -2309,16 +2317,11 @@ public class CPPVisitor extends ASTQueries {
 		    if (owner instanceof ICPPNamespace && n.length == 0)
 		    	continue;
 		
-		    ns = (char[][]) ArrayUtil.append(n.getClass(), ns, n);
+		    ns = ArrayUtil.append(ns, n);
 		}
-        final char[] bname = binding.getNameCharArray();
-        ns = (char[][]) ArrayUtil.trim(bname.getClass(), ns);
-        char[][] result = new char[ns.length + 1][];
-        for (int i = ns.length - 1; i >= 0; i--) {
-            result[ns.length - i - 1] = ns[i];
-        }
-		result[ns.length]= bname;
-	    return result;
+        ns = ArrayUtil.trim(ns);
+        ArrayUtil.reverse(ns);
+	    return ns;
 	}
 
 	private static IScope getParentScope(IScope scope, IASTTranslationUnit unit) throws DOMException {

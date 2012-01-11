@@ -71,10 +71,9 @@ public class CaseBreakChecker extends AbstractIndexAstChecker implements IChecke
 		 *         - "exit"
 		 */
 		protected boolean isBreakOrExitStatement(IASTStatement statement) {
-			CxxAstUtils utils = CxxAstUtils.getInstance();
 			return (statement instanceof IASTBreakStatement) || statement instanceof IASTReturnStatement
 					|| statement instanceof IASTContinueStatement || statement instanceof IASTGotoStatement
-					|| utils.isThrowStatement(statement) || utils.isExitStatement(statement);
+					|| CxxAstUtils.isThrowStatement(statement) || CxxAstUtils.isExitStatement(statement);
 		}
 
 		@Override
@@ -217,6 +216,7 @@ public class CaseBreakChecker extends AbstractIndexAstChecker implements IChecke
 		return getCommentMap().getLastFreestandingCommentForNode(statement);
 	}
 
+	@Override
 	public void initPreferences(IProblemWorkingCopy problem) {
 		super.initPreferences(problem);
 		addPreference(problem, PARAM_NO_BREAK_COMMENT, CheckersMessages.CaseBreakChecker_DefaultNoBreakCommentDescription,
@@ -225,6 +225,7 @@ public class CaseBreakChecker extends AbstractIndexAstChecker implements IChecke
 		addPreference(problem, PARAM_EMPTY_CASE, CheckersMessages.CaseBreakChecker_EmptyCaseDescription, Boolean.FALSE);
 	}
 
+	@Override
 	public void processAst(IASTTranslationUnit ast) {
 		_checkLastCase = (Boolean) getPreference(getProblemById(ER_ID, getFile()), PARAM_LAST_CASE);
 		_checkEmptyCase = (Boolean) getPreference(getProblemById(ER_ID, getFile()), PARAM_EMPTY_CASE);

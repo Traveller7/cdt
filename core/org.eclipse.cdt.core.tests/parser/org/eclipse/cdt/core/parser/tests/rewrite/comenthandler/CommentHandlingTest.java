@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008 Institute for Software, HSR Hochschule fuer Technik  
+ * Copyright (c) 2008, 2011 Institute for Software, HSR Hochschule fuer Technik  
  * Rapperswil, University of applied sciences and others
  * All rights reserved. This program and the accompanying materials 
  * are made available under the terms of the Eclipse Public License v1.0 
@@ -11,11 +11,10 @@
  ******************************************************************************/
 package org.eclipse.cdt.core.parser.tests.rewrite.comenthandler;
 
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
-import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,7 +73,6 @@ import org.eclipse.core.runtime.CoreException;
  * @author Guido Zgraggen IFS, Lukas Felber IFS
  */
 public class CommentHandlingTest extends RewriteBaseTest {
-
 	private static final String ANY_CHAR_REGEXP = "(.*)"; //$NON-NLS-1$
 	private static final String SEPARATOR = System.getProperty("line.separator"); //$NON-NLS-1$
 
@@ -86,13 +84,13 @@ public class CommentHandlingTest extends RewriteBaseTest {
 	private static final String TRAILING_COMMENT_TITLE = "<<<=== Trailing Comment Test Section ===>>>"; //$NON-NLS-1$
 	private static final String FREESTANDING_COMMENT_TITLE = "<<<=== Freestanding Comment Test Section ===>>>"; //$NON-NLS-1$
 	
-	public CommentHandlingTest(String name, Vector<TestSourceFile> files) {
+	public CommentHandlingTest(String name, List<TestSourceFile> files) {
 		super(name, files);
 	}
 
 	@Override
 	protected void runTest() throws Throwable {
-		if (fileMap.size() == 0) {
+		if (fileMap.isEmpty()) {
 			fail("No file for testing"); //$NON-NLS-1$
 		}
 		
@@ -140,12 +138,12 @@ public class CommentHandlingTest extends RewriteBaseTest {
 		return actualResultBuilder;
 	}
 
-	private String getCommentMapResult(HashMap<IASTNode, ArrayList<IASTComment>> map) {
+	private String getCommentMapResult(Map<IASTNode, List<IASTComment>> map) {
 		TreeSet<IASTNode> keyTree = new TreeSet<IASTNode>(new NodeOffsetComparator());
 		keyTree.addAll(map.keySet());
 		StringBuilder output = new StringBuilder();
 		for (IASTNode actNode : keyTree) {
-			ArrayList<IASTComment> comments = map.get(actNode);
+			List<IASTComment> comments = map.get(actNode);
 			output.append(getSignature(actNode) + " = "); //$NON-NLS-1$
 			boolean first = true;
 			for (IASTComment actComment : comments) {
@@ -183,6 +181,7 @@ public class CommentHandlingTest extends RewriteBaseTest {
 	}
 	
 	private final class NodeOffsetComparator implements Comparator<IASTNode> {
+		@Override
 		public int compare(IASTNode o1, IASTNode o2) {
 			int offDif = o1.getFileLocation().getNodeOffset() - o2.getFileLocation().getNodeOffset();
 			if (offDif == 0) {

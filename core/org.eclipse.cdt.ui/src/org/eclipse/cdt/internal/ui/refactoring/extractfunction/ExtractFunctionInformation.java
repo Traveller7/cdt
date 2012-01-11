@@ -7,11 +7,12 @@
  * http://www.eclipse.org/legal/epl-v10.html  
  *  
  * Contributors: 
- * Institute for Software - initial API and implementation
+ *     Institute for Software - initial API and implementation
  *******************************************************************************/
 package org.eclipse.cdt.internal.ui.refactoring.extractfunction;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.cdt.core.dom.ast.cpp.ICPPASTFunctionDeclarator;
 
@@ -19,18 +20,12 @@ import org.eclipse.cdt.internal.ui.refactoring.MethodContext;
 import org.eclipse.cdt.internal.ui.refactoring.NodeContainer.NameInformation;
 import org.eclipse.cdt.internal.ui.refactoring.utils.VisibilityEnum;
 
-
 public class ExtractFunctionInformation {
-
-	public final int VISIBILITY_PRIVATE = 1;
-	public final int VISIBILITY_PROTECTED = 3;
-	public final int VISIBILITY_PUBLIC = 2;
-	
 	private VisibilityEnum visibility = VisibilityEnum.v_private;
 	private String methodName;
 	private boolean replaceDuplicates;
-	private ArrayList<NameInformation> allAfterUsedNames;
-	private ArrayList<NameInformation> allUsedNames;
+	private List<NameInformation> allAfterUsedNames;
+	private List<NameInformation> allUsedNames;
 	private NameInformation inScopeDeclaredVariable; 
 	private NameInformation returnVariable;
 	private ICPPASTFunctionDeclarator declarator;
@@ -67,11 +62,11 @@ public class ExtractFunctionInformation {
 		this.replaceDuplicates = replaceDuplicates;
 	}
 
-	public ArrayList<NameInformation> getAllAfterUsedNames() {
-		if(allAfterUsedNames == null){
+	public List<NameInformation> getAllAfterUsedNames() {
+		if (allAfterUsedNames == null) {
 			allAfterUsedNames = new ArrayList<NameInformation>();
 			for (NameInformation name : getAllUsedNames()) {
-				if(name.isReference()||name.isReturnValue()){
+				if (name.isReference()||name.isReturnValue()) {
 					allAfterUsedNames.add(name);
 				}
 			}
@@ -89,7 +84,7 @@ public class ExtractFunctionInformation {
 	}
 
 	public void setReturnVariable(NameInformation returnVariable) {
-		if(returnVariable != null) {
+		if (returnVariable != null) {
 			returnVariable.setUserSetIsReturnValue(true);
 		}
 		this.returnVariable = returnVariable;
@@ -103,11 +98,11 @@ public class ExtractFunctionInformation {
 		this.inScopeDeclaredVariable = inScopeDeclaredVariable;
 	}
 
-	public ArrayList<NameInformation> getAllUsedNames() {
+	public List<NameInformation> getAllUsedNames() {
 		return allUsedNames;
 	}
 
-	public void setAllUsedNames(ArrayList<NameInformation> allUsedNames) {
+	public void setAllUsedNames(List<NameInformation> allUsedNames) {
 		this.allUsedNames = allUsedNames;
 	}
 

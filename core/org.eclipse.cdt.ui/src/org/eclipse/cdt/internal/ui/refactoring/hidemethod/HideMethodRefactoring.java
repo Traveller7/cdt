@@ -43,10 +43,11 @@ import org.eclipse.cdt.core.index.IIndexName;
 import org.eclipse.cdt.core.model.ICElement;
 import org.eclipse.cdt.core.model.ICProject;
 
+import org.eclipse.cdt.internal.core.dom.parser.ASTQueries;
 import org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.CPPVisitor;
 import org.eclipse.cdt.internal.core.pdom.dom.PDOMName;
 
-import org.eclipse.cdt.internal.ui.refactoring.AddDeclarationNodeToClassChange;
+import org.eclipse.cdt.internal.ui.refactoring.ClassMemberInserter;
 import org.eclipse.cdt.internal.ui.refactoring.CRefactoring;
 import org.eclipse.cdt.internal.ui.refactoring.CRefactoringDescription;
 import org.eclipse.cdt.internal.ui.refactoring.ModificationCollector;
@@ -118,7 +119,7 @@ public class HideMethodRefactoring extends CRefactoring {
 				sm.worked(1);
 				if (methodToHideDecl instanceof IASTFunctionDefinition) {
 					IASTDeclarator declarator = ((IASTFunctionDefinition)methodToHideDecl).getDeclarator();
-					if (CPPVisitor.findInnermostDeclarator(declarator).getName().getRawSignature().equals(name.getRawSignature())) {
+					if (ASTQueries.findInnermostDeclarator(declarator).getName().getRawSignature().equals(name.getRawSignature())) {
 						if (!(declarator instanceof IASTFunctionDeclarator)) {
 							initStatus.addFatalError(Messages.HideMethodRefactoring_CanOnlyHideMethods); 
 							return initStatus;
@@ -241,7 +242,7 @@ public class HideMethodRefactoring extends CRefactoring {
 		IASTNode parent = compStat.getParent();
 		if (parent instanceof IASTFunctionDefinition) {
 			IASTDeclarator declarator = ((IASTFunctionDefinition)parent).getDeclarator();
-			IASTName declaratorName = getLastName(CPPVisitor.findInnermostDeclarator(declarator));
+			IASTName declaratorName = getLastName(ASTQueries.findInnermostDeclarator(declarator));
 
 			DeclarationFinderDO data = DeclarationFinder.getDeclaration(declaratorName, getIndex());
 
@@ -277,7 +278,7 @@ public class HideMethodRefactoring extends CRefactoring {
 				TextEditGroup editGroup = new TextEditGroup(Messages.HideMethodRefactoring_FILE_CHANGE_TEXT+ methodToHide.getRawSignature());
 
 				ICPPASTCompositeTypeSpecifier classDefinition = (ICPPASTCompositeTypeSpecifier) methodToHideDecl.getParent();
-				AddDeclarationNodeToClassChange.createChange(classDefinition, VisibilityEnum.v_private, methodToHideDecl, false, collector);
+				ClassMemberInserter.createChange(classDefinition, VisibilityEnum.v_private, methodToHideDecl, false, collector);
 
 				rewriter.remove(methodToHideDecl, editGroup);
 			} finally {

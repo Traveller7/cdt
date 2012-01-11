@@ -33,31 +33,33 @@ import org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.CPPTemplates;
 public class CPPClassTemplatePartialSpecialization extends CPPClassTemplate 
 		implements ICPPClassTemplatePartialSpecialization, ICPPSpecialization {
 
-	private ICPPTemplateArgument[] arguments;
+	private final ICPPTemplateArgument[] arguments;
 
-	public CPPClassTemplatePartialSpecialization(ICPPASTTemplateId name) {
+	public CPPClassTemplatePartialSpecialization(ICPPASTTemplateId name, ICPPTemplateArgument[] arguments) {
 		super(name);
+		this.arguments= arguments;
 	}
 
+	@Override
 	public ICPPTemplateArgument[] getTemplateArguments() throws DOMException {
-		if (arguments == null) {
-			arguments= CPPTemplates.createTemplateArgumentArray((ICPPASTTemplateId) getTemplateName());
-		}
 		return arguments;
 	}
 
 	/* (non-Javadoc)
 	 * @see org.eclipse.cdt.core.dom.ast.cpp.ICPPClassTemplatePartialSpecialization#getPrimaryClassTemplate()
 	 */
+	@Override
 	public ICPPClassTemplate getPrimaryClassTemplate() {
 		ICPPASTTemplateId id = (ICPPASTTemplateId) getTemplateName();
 		return (ICPPClassTemplate) id.getTemplateName().resolveBinding();
 	}
 
+	@Override
 	public IBinding getSpecializedBinding() {
 		return getPrimaryClassTemplate();
 	}
 
+	@Override
 	public ICPPTemplateParameterMap getTemplateParameterMap() {
 		try {
 			return CPPTemplates.createParameterMap(getPrimaryClassTemplate(), getTemplateArguments());
@@ -80,11 +82,13 @@ public class CPPClassTemplatePartialSpecialization extends CPPClassTemplate
 		}
 	}
 	
+	@Override
 	@Deprecated
 	public ObjectMap getArgumentMap() {
 		return CPPTemplates.getArgumentMap(getPrimaryClassTemplate(), getTemplateParameterMap());
 	}
 	
+	@Override
 	@Deprecated
 	public IType[] getArguments() throws DOMException {
 		return CPPTemplates.getArguments(getTemplateArguments());

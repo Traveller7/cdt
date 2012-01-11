@@ -84,6 +84,8 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 	}
 	
 	protected IASTName findName(String section, int len) {
+		if (len == 0)
+			len= section.length();
 		for (int i = 0; i < strategy.getAstCount(); i++) {
 			IASTTranslationUnit ast = strategy.getAst(i);
 			final IASTNodeSelector nodeSelector = ast.getNodeSelector(null);
@@ -118,12 +120,12 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			len= section.length()+len;
 		}
 		IASTName name= findName(section, len);
-		assertNotNull("name not found for \""+section+"\"", name);
+		assertNotNull("Name not found for \"" + section + "\"", name);
 		assertEquals(section.substring(0, len), name.getRawSignature());
 		
 		IBinding binding = name.resolveBinding();
-		assertNotNull("No binding for "+name.getRawSignature(), binding);
-		assertFalse("Binding is a ProblemBinding for name "+name.getRawSignature(), IProblemBinding.class.isAssignableFrom(name.resolveBinding().getClass()));
+		assertNotNull("No binding for " + name.getRawSignature(), binding);
+		assertFalse("Binding is a ProblemBinding for name \"" + name.getRawSignature() + "\"", IProblemBinding.class.isAssignableFrom(name.resolveBinding().getClass()));
 		assertInstance(binding, clazz, cs);
 		return clazz.cast(binding);
 	}
@@ -133,15 +135,15 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 	 */
 	protected <T extends IBinding> T getBindingFromASTName(String section, int len) {
 		if (len <= 0)
-			len+= section.length();
+			len += section.length();
 		
 		IASTName name= findName(section, len);
-		assertNotNull("name not found for \""+section+"\"", name);
+		assertNotNull("Name not found for \"" + section + "\"", name);
 		assertEquals(section.substring(0, len), name.getRawSignature());
 		
 		IBinding binding = name.resolveBinding();
-		assertNotNull("No binding for "+name.getRawSignature(), binding);
-		assertFalse("Binding is a ProblemBinding for name "+name.getRawSignature(), IProblemBinding.class.isAssignableFrom(name.resolveBinding().getClass()));
+		assertNotNull("No binding for " + name.getRawSignature(), binding);
+		assertFalse("Binding is a ProblemBinding for name \"" + name.getRawSignature() + "\"", IProblemBinding.class.isAssignableFrom(name.resolveBinding().getClass()));
 		return (T) binding;
 	}
 
@@ -153,12 +155,12 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 	 */
 	protected IBinding getProblemFromASTName(String section, int len) {
 		IASTName name= findName(section, len);
-		assertNotNull("name not found for \""+section+"\"", name);
+		assertNotNull("Name not found for \"" + section + "\"", name);
 		assertEquals(section.substring(0, len), name.getRawSignature());
 		
 		IBinding binding = name.resolveBinding();
-		assertNotNull("No binding for "+name.getRawSignature(), binding);
-		assertTrue("Binding is not a ProblemBinding for name "+name.getRawSignature(), IProblemBinding.class.isAssignableFrom(name.resolveBinding().getClass()));
+		assertNotNull("No binding for " + name.getRawSignature(), binding);
+		assertTrue("Binding is not a ProblemBinding for name \"" + name.getRawSignature() + "\"", IProblemBinding.class.isAssignableFrom(name.resolveBinding().getClass()));
 		return name.resolveBinding();
 	}
 	
@@ -198,10 +200,10 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 	}
 
 	protected static <T> T assertInstance(Object o, Class<T> clazz, Class ... cs) {
-		assertNotNull("Expected "+clazz.getName()+" but got null", o);
-		assertTrue("Expected "+clazz.getName()+" but got "+o.getClass().getName(), clazz.isInstance(o));
+		assertNotNull("Expected " + clazz.getName() + " but got null", o);
+		assertTrue("Expected " + clazz.getName() + " but got " + o.getClass().getName(), clazz.isInstance(o));
 		for (Class c : cs) {
-			assertTrue("Expected "+clazz.getName()+" but got "+o.getClass().getName(), c.isInstance(o));
+			assertTrue("Expected " + clazz.getName() + " but got " + o.getClass().getName(), c.isInstance(o));
 		}
 		return clazz.cast(o);
 	}
@@ -260,30 +262,36 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			this.cpp = cpp;
 		}
 
+		@Override
 		public ICProject getCProject() {
 			return cproject;
 		}
 		
+		@Override
 		public StringBuilder[] getTestData() {
 			return testData;
 		}
 
+		@Override
 		public int getAstCount() {
 			return 1;
 		}
 
+		@Override
 		public IASTTranslationUnit getAst(int index) {
 			if (index != 0)
 				throw new IllegalArgumentException();
 			return ast;
 		}
 
+		@Override
 		public StringBuilder getAstSource(int index) {
 			if (index != 0)
 				throw new IllegalArgumentException();
 			return testData[1];
 		}
 
+		@Override
 		public void setUp() throws Exception {
 			cproject = cpp ? CProjectHelper.createCCProject(getName() + System.currentTimeMillis(), "bin", IPDOMManager.ID_NO_INDEXER) 
 					: CProjectHelper.createCProject(getName() + System.currentTimeMillis(), "bin", IPDOMManager.ID_NO_INDEXER);
@@ -308,6 +316,7 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			ast = TestSourceReader.createIndexBasedAST(index, cproject, cppfile);
 		}
 
+		@Override
 		public void tearDown() throws Exception {
 			if (index != null) {
 				index.releaseReadLock();
@@ -317,10 +326,12 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			}
 		}
 
+		@Override
 		public IIndex getIndex() {
 			return index;
 		}
 		
+		@Override
 		public boolean isCompositeIndex() {
 			return false;
 		}
@@ -337,30 +348,36 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			this.cpp = cpp;
 		}
 
+		@Override
 		public ICProject getCProject() {
 			return cproject;
 		}
 
+		@Override
 		public StringBuilder[] getTestData() {
 			return testData;
 		}
 
+		@Override
 		public int getAstCount() {
 			return 1;
 		}
 
+		@Override
 		public IASTTranslationUnit getAst(int index) {
 			if (index != 0)
 				throw new IllegalArgumentException();
 			return ast;
 		}
 
+		@Override
 		public StringBuilder getAstSource(int index) {
 			if (index != 0)
 				throw new IllegalArgumentException();
 			return testData[1];
 		}
 
+		@Override
 		public void setUp() throws Exception {
 			cproject = cpp ? CProjectHelper.createCCProject(getName()+System.currentTimeMillis(), "bin", IPDOMManager.ID_NO_INDEXER) 
 					: CProjectHelper.createCProject(getName()+System.currentTimeMillis(), "bin", IPDOMManager.ID_NO_INDEXER);
@@ -385,6 +402,7 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			ast = TestSourceReader.createIndexBasedAST(index, cproject, cppfile);
 		}
 
+		@Override
 		public void tearDown() throws Exception {
 			if (index != null) {
 				index.releaseReadLock();
@@ -394,10 +412,12 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			}
 		}
 
+		@Override
 		public IIndex getIndex() {
 			return index;
 		}
 		
+		@Override
 		public boolean isCompositeIndex() {
 			return false;
 		}
@@ -425,26 +445,32 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			asts = new ArrayList<IASTTranslationUnit>();
 		}
 
+		@Override
 		public ICProject getCProject() {
 			return cproject;
 		}
 
+		@Override
 		public StringBuilder[] getTestData() {
 			return testData;
 		}
 
+		@Override
 		public int getAstCount() {
 			return asts.size();
 		}
 
+		@Override
 		public IASTTranslationUnit getAst(int index) {
 			return asts.get(index);
 		}
 
+		@Override
 		public StringBuilder getAstSource(int index) {
 			return astSources.get(index);
 		}
 
+		@Override
 		public void setUp() throws Exception {
 			cproject = cpp ? CProjectHelper.createCCProject(getName() + System.currentTimeMillis(), "bin", IPDOMManager.ID_NO_INDEXER) 
 					: CProjectHelper.createCProject(getName() + System.currentTimeMillis(), "bin", IPDOMManager.ID_NO_INDEXER);
@@ -487,6 +513,7 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			}
 		}
 
+		@Override
 		public void tearDown() throws Exception {
 			if (index != null) {
 				index.releaseReadLock();
@@ -496,10 +523,12 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			}
 		}
 
+		@Override
 		public IIndex getIndex() {
 			return index;
 		}
 		
+		@Override
 		public boolean isCompositeIndex() {
 			return false;
 		}
@@ -516,10 +545,12 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			this.cpp = cpp;
 		}
 
+		@Override
 		public ICProject getCProject() {
 			return cproject;
 		}
 		
+		@Override
 		public void tearDown() throws Exception {
 			if (index != null) {
 				index.releaseReadLock();
@@ -532,6 +563,7 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			}
 		}
 
+		@Override
 		public void setUp() throws Exception {
 			cproject= cpp ? CProjectHelper.createCCProject("OnlineContent"+System.currentTimeMillis(), "bin", IPDOMManager.ID_NO_INDEXER)
 					: CProjectHelper.createCProject("OnlineContent"+System.currentTimeMillis(), "bin", IPDOMManager.ID_NO_INDEXER);
@@ -580,30 +612,36 @@ public abstract class IndexBindingResolutionTestBase extends BaseTestCase {
 			return referenced;
 		}
 
+		@Override
 		public int getAstCount() {
 			return 1;
 		}
 
+		@Override
 		public IASTTranslationUnit getAst(int index) {
 			if (index != 0)
 				throw new IllegalArgumentException();
 			return ast;
 		}
 
+		@Override
 		public StringBuilder getAstSource(int index) {
 			if (index != 0)
 				throw new IllegalArgumentException();
 			return testData[1];
 		}
 
+		@Override
 		public IIndex getIndex() {
 			return index;
 		}
 
+		@Override
 		public StringBuilder[] getTestData() {
 			return testData;
 		}
 		
+		@Override
 		public boolean isCompositeIndex() {
 			return true;
 		}

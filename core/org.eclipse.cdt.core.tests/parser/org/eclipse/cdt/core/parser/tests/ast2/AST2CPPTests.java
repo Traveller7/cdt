@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2010 IBM Corporation and others.
+ * Copyright (c) 2004, 2012 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,6 +16,7 @@ package org.eclipse.cdt.core.parser.tests.ast2;
 
 import static org.eclipse.cdt.core.dom.ast.IASTExpression.ValueCategory.LVALUE;
 import static org.eclipse.cdt.core.dom.ast.IASTExpression.ValueCategory.XVALUE;
+import static org.eclipse.cdt.core.parser.ParserLanguage.CPP;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9367,6 +9368,33 @@ public class AST2CPPTests extends AST2BaseTest {
 		parseAndCheckBindings();
 	}
 	
+	//	namespace std {
+	//	    template <class T1, class T2> struct pair {
+	//	        T1 first;
+	//	        T2 second;
+	//	    };
+	//
+	//	    template <typename T, typename U> T begin(const pair<T, U>& p) {
+	//	        return p.first;
+	//	    }
+	//	    template <typename T, typename U> U end(const pair<T, U>& p) {
+	//	        return p.second;
+	//	    }
+	//	}
+	//	struct S {
+	//	    int x;
+	//	};
+	//
+	//	int main() {
+	//	    S arr[5];
+	//	    std::pair<S*, S*> p{arr, arr + 5};
+	//	    for (const auto& r : p)
+	//	        r.x;  
+	//	}
+	public void testAutoTypeInRangeBasedFor_332883c() throws Exception {
+		parseAndCheckBindings();
+	}
+
 	//	struct S {
 	//	    void f();
 	//	};
@@ -9597,5 +9625,25 @@ public class AST2CPPTests extends AST2BaseTest {
 		
 		IBinding ctor= bh.assertNonProblem("E(){}", 1);
 		assertTrue(ctor instanceof ICPPConstructor);
+	}
+	
+	//	struct S;
+	//	struct S {
+	//		S();
+	//		~S();
+	//		T();
+	//		~T();
+	//	};
+	public void testErrorForDestructorWithWrongName_367590() throws Exception {
+		IASTTranslationUnit tu= parse(getAboveComment(), CPP, false, false);
+		IASTCompositeTypeSpecifier S;
+		IASTProblemDeclaration p;
+		IASTSimpleDeclaration s;
+		
+		S= getCompositeType(tu, 1);
+		s= getDeclaration(S, 0);
+		s= getDeclaration(S, 1);
+		p= getDeclaration(S, 2);
+		p= getDeclaration(S, 3);
 	}
 }

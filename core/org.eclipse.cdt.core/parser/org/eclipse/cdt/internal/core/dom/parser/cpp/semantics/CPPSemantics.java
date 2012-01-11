@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2004, 2011 IBM Corporation and others.
+ * Copyright (c) 2004, 2012 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,7 +19,17 @@ import static org.eclipse.cdt.core.dom.ast.IASTExpression.ValueCategory.LVALUE;
 import static org.eclipse.cdt.core.dom.ast.IASTExpression.ValueCategory.PRVALUE;
 import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.ExpressionTypes.typeOrFunctionSet;
 import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.ExpressionTypes.valueCat;
-import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.*;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.ALLCVQ;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.ARRAY;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.CVTYPE;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.MPTR;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.PTR;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.REF;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.TDEF;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.calculateInheritanceDepth;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.getNestedType;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.getUltimateTypeUptoPointers;
+import static org.eclipse.cdt.internal.core.dom.parser.cpp.semantics.SemanticUtil.isConversionOperator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -324,7 +334,7 @@ public class CPPSemantics {
 		if (binding instanceof ICPPClassTemplate && !(binding instanceof ICPPClassSpecialization) &&
 				!(binding instanceof ICPPTemplateParameter) && !(data.astName instanceof ICPPASTTemplateId)) {
 			ASTNodeProperty prop = data.astName.getPropertyInParent();
-			if (prop != ICPPASTTemplateId.TEMPLATE_NAME && prop != ICPPASTQualifiedName.SEGMENT_NAME) {
+			if (prop != ICPPASTTemplateId.TEMPLATE_NAME && !data.astName.isQualified()) {
 				// You cannot use a class template name outside of the class template scope,
 				// mark it as a problem.
 				IBinding replacement= CPPTemplates.isUsedInClassTemplateScope((ICPPClassTemplate) binding, data.astName);
@@ -649,23 +659,23 @@ public class CPPSemantics {
             }
         }
         
-        if (data.astName != null 
-        		&& CharArrayUtils.equals(CPPVisitor.BEGIN, data.astName.getSimpleID())) {
-        	IASTNode parent = data.astName.getParent();     // id-expression
-        	if (parent != null)
-        		parent= parent.getParent();     			// function call
-        	if (parent != null)
-        		parent= parent.getParent();     			// the loop
-        	if (parent != null)
-        		parent= parent.getParent();     			// unary *
-        	if (parent instanceof ICPPASTRangeBasedForStatement) {
-        		IBinding[] std= parent.getTranslationUnit().getScope().find(CPPVisitor.STD);
-        		for (IBinding binding : std) {
-        			if (binding instanceof ICPPNamespace) {
-        				namespaces.add(((ICPPNamespace) binding).getNamespaceScope());
-        			}
-        		}
-        	}
+		if (data.astName != null) {
+	        final char[] simpleID = data.astName.getSimpleID();
+	        if (CharArrayUtils.equals(CPPVisitor.BEGIN, simpleID) || CharArrayUtils.equals(CPPVisitor.END, simpleID)) {
+	        	IASTNode parent = data.astName.getParent();     // id-expression
+	        	if (parent != null)
+	        		parent= parent.getParent();     			// function call
+	        	if (parent != null)
+	        		parent= parent.getParent();     			// the loop
+	        	if (parent instanceof ICPPASTRangeBasedForStatement) {
+	        		IBinding[] std= parent.getTranslationUnit().getScope().find(CPPVisitor.STD);
+	        		for (IBinding binding : std) {
+	        			if (binding instanceof ICPPNamespace) {
+	        				namespaces.add(((ICPPNamespace) binding).getNamespaceScope());
+	        			}
+	        		}
+	        	}
+	        }
         }
         return namespaces;
     }
@@ -1449,7 +1459,7 @@ public class CPPSemantics {
 		    if (item instanceof ICPPASTLinkageSpecification) {
 		        IASTDeclaration[] decls = ((ICPPASTLinkageSpecification) item).getDeclarations();
 		        if (decls != null && decls.length > 0) {
-			        nodeStack = (IASTNode[][]) ArrayUtil.append(IASTNode[].class, nodeStack, nodes);
+			        nodeStack = ArrayUtil.append(IASTNode[].class, nodeStack, nodes);
 			        nodeIdxStack = ArrayUtil.setInt(nodeIdxStack, ++nodeStackPos, idx);
 			        nodes = ((ICPPASTLinkageSpecification) item).getDeclarations();
 			        idx = 0;
@@ -1782,10 +1792,11 @@ public class CPPSemantics {
 	    
         IBinding[] result = null;
         for (Object binding : bindings) {
-            if (binding instanceof IASTName)
-                result = (IBinding[]) ArrayUtil.append(IBinding.class, result, ((IASTName) binding).resolveBinding());
-            else if (binding instanceof IBinding)
-                result = (IBinding[]) ArrayUtil.append(IBinding.class, result, binding);
+            if (binding instanceof IASTName) {
+                result = ArrayUtil.append(IBinding.class, result, ((IASTName) binding).resolveBinding());
+            } else if (binding instanceof IBinding) {
+                result = ArrayUtil.append(IBinding.class, result, (IBinding) binding);
+            }
         }
         return new CPPCompositeBinding(result);
 	}
@@ -2019,15 +2030,15 @@ public class CPPSemantics {
 	            }
 	        }
 
-	        IBinding[] bindings = null;
+	        IBinding[] bindings = IBinding.EMPTY_BINDING_ARRAY;
 	        if (cmp > 0) {
-	            bindings = (IBinding[]) ArrayUtil.append(IBinding.class, bindings, obj);
-	            bindings = (IBinding[]) ArrayUtil.append(IBinding.class, bindings, type);
+	            bindings = ArrayUtil.append(bindings, obj);
+	            bindings = ArrayUtil.append(bindings, type);
 	        } else {
-	            bindings = (IBinding[]) ArrayUtil.append(IBinding.class, bindings, type);
-	            bindings = (IBinding[]) ArrayUtil.addAll(IBinding.class, bindings, fns.keyArray());
+	            bindings = ArrayUtil.append(bindings, type);
+	            bindings = ArrayUtil.addAll(bindings, fns.keyArray());
 	        }
-	        bindings = (IBinding[]) ArrayUtil.trim(IBinding.class, bindings);
+	        bindings = ArrayUtil.trim(IBinding.class, bindings);
 	        ICPPUsingDeclaration composite = new CPPUsingDeclaration(data.astName, bindings);
 	        return composite;	
 	    }
@@ -2276,7 +2287,8 @@ public class CPPSemantics {
 	private static ICPPFunction[] selectByArgumentCount(LookupData data, ICPPFunction[] functions) throws DOMException {
 	    assert data.forDeclaration() == null;
 
-	    int argumentCount = data.getFunctionArgumentCount();
+	    final int argumentCount = data.getFunctionArgumentCount();
+	    final int packExpansionCount= data.getFunctionArgumentPackExpansionCount();
 
 	    // Trim the list down to the set of viable functions
 	    ICPPFunction[] result= new ICPPFunction[functions.length];
@@ -2300,11 +2312,11 @@ public class CPPSemantics {
 					numArgs--;
 
 				boolean ok;
-				if (numArgs > numPars) {
-					// more arguments than parameters --> need ellipsis or parameter pack
+				if (numArgs-packExpansionCount > numPars) {
+					// More arguments than parameters --> need ellipsis or parameter pack
 					ok= fn.takesVarArgs() || fn.hasParameterPack();
 				} else {
-					ok = numArgs >= fn.getRequiredArgumentCount();
+					ok = numArgs >= fn.getRequiredArgumentCount() || packExpansionCount > 0;
 				}
 				if (ok) {
 					if (fn instanceof IIndexBinding) {
@@ -2327,7 +2339,7 @@ public class CPPSemantics {
 	}
 	
 	public static IBinding resolveFunction(LookupData data, ICPPFunction[] fns, boolean allowUDC) throws DOMException {
-	    fns= (ICPPFunction[]) ArrayUtil.trim(ICPPFunction.class, fns);
+	    fns= ArrayUtil.trim(ICPPFunction.class, fns);
 	    if (fns == null || fns.length == 0)
 	        return null;
 	    
@@ -2412,7 +2424,7 @@ public class CPPSemantics {
 				bestFnCost= fnCost;
 				ambiguousFunctions= null;
 			} else if (cmp == 0) {
-				ambiguousFunctions= (IFunction[]) ArrayUtil.append(IFunction.class, ambiguousFunctions, fn);
+				ambiguousFunctions= ArrayUtil.append(IFunction.class, ambiguousFunctions, fn);
 			}
 		}
 		
@@ -2424,7 +2436,7 @@ public class CPPSemantics {
 						bestFnCost= fnCost;
 						ambiguousFunctions= null;
 					} else if (cmp == 0) {
-						ambiguousFunctions= (IFunction[]) ArrayUtil.append(IFunction.class, ambiguousFunctions, fnCost.getFunction());
+						ambiguousFunctions= ArrayUtil.append(IFunction.class, ambiguousFunctions, fnCost.getFunction());
 					}
 				}
 			}
@@ -2434,7 +2446,7 @@ public class CPPSemantics {
 			return null;
 		
 		if (ambiguousFunctions != null) {
-			ambiguousFunctions= (IFunction[]) ArrayUtil.append(IFunction.class, ambiguousFunctions, bestFnCost.getFunction());
+			ambiguousFunctions= ArrayUtil.append(IFunction.class, ambiguousFunctions, bestFnCost.getFunction());
 			return new ProblemBinding(data.astName, IProblemBinding.SEMANTIC_AMBIGUOUS_LOOKUP,
 					ambiguousFunctions);
 		}
