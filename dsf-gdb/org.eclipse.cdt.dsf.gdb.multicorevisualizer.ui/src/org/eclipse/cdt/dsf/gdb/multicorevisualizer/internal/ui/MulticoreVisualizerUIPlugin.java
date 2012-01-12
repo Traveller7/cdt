@@ -7,13 +7,19 @@
  * 
  * Contributors:
  *     Marc Khouzam (Ericsson) - initial API and implementation
+ *     William R. Swanson (Tilera Corporation) - added resource support
  *******************************************************************************/
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui;
 
 import org.eclipse.cdt.dsf.gdb.launching.LaunchMessages;
+import org.eclipse.cdt.visualizer.ui.plugin.CDTVisualizerUIPlugin;
+import org.eclipse.cdt.visualizer.ui.util.UIResourceManager;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
@@ -23,21 +29,50 @@ import org.osgi.framework.BundleContext;
 /**
  * The activator class controls the plug-in life cycle
  */
-public class MulticoreVisualizerUIPlugin extends AbstractUIPlugin {
-
+public class MulticoreVisualizerUIPlugin extends AbstractUIPlugin
+{
+	// --- constants ---
+	
 	// The plug-in ID
 	public static final String PLUGIN_ID = "org.eclipse.cdt.dsf.gdb.multicorevisualizer.ui"; //$NON-NLS-1$
 
-	// The shared instance
-	private static MulticoreVisualizerUIPlugin plugin;
 	
+	// --- static members ---
+
+	/** Singleton instance */
+	private static MulticoreVisualizerUIPlugin plugin;
+
+	/** Bundle context */
     private static BundleContext fgBundleContext; 
+
+	/** Resource manager */
+	protected static UIResourceManager s_resources = null;
+	
+	/**
+	 * Returns the shared instance
+	 */
+	public static MulticoreVisualizerUIPlugin getDefault() {
+		return plugin;
+	}
+
+	/**
+	 * Returns the bundle context for this plugin.
+	 */
+    public static BundleContext getBundleContext() {
+        return fgBundleContext;
+    }
+
     
+	// --- constructors/destructors ---
+	
 	/**
 	 * The constructor
 	 */
 	public MulticoreVisualizerUIPlugin() {
 	}
+
+	
+	// --- plugin startup/shutdown methods ---
 
 	/*
 	 * (non-Javadoc)
@@ -48,6 +83,9 @@ public class MulticoreVisualizerUIPlugin extends AbstractUIPlugin {
         fgBundleContext = context;
 		super.start(context);
 		plugin = this;
+		
+		// initialize resource management (strings, images, fonts, colors, etc.)
+		getPluginResources();
 	}
 
 	/*
@@ -56,59 +94,17 @@ public class MulticoreVisualizerUIPlugin extends AbstractUIPlugin {
 	 */
 	@Override
     public void stop(BundleContext context) throws Exception {
+		// clean up resource management
+		cleanupPluginResources();
+		
 		plugin = null;
 		super.stop(context);
         fgBundleContext = null;
 	}
 
-	/**
-	 * Returns the shared instance
-	 *
-	 * @return the shared instance
-	 */
-	public static MulticoreVisualizerUIPlugin getDefault() {
-		return plugin;
-	}
-
-    public static BundleContext getBundleContext() {
-        return fgBundleContext;
-    }
-    
-    /**
-     * copied from org.eclipse.cdt.launch.internal.ui.LaunchUIPlugin
-     */
-	private static Shell debugDialogShell;
-
-	public static Shell getShell() {
-		if (getActiveWorkbenchShell() != null) {
-			return getActiveWorkbenchShell();
-		}
-		if (debugDialogShell != null) {
-			if (!debugDialogShell.isDisposed())
-				return debugDialogShell;
-			debugDialogShell = null;
-		}
-		IWorkbenchWindow[] windows = getDefault().getWorkbench().getWorkbenchWindows();
-		return windows[0].getShell();
-	}
-
-	public static void setDialogShell(Shell shell) {
-		debugDialogShell = shell;
-	}
-
-	/**
-	 * Convenience method which returns the unique identifier of this plugin.
-	 */
-	public static String getUniqueIdentifier() {
-		if (getDefault() == null) {
-			// If the default instance is not yet initialized,
-			// return a static identifier. This identifier must
-			// match the plugin id defined in plugin.xml
-			return PLUGIN_ID;
-		}
-		return getDefault().getBundle().getSymbolicName();
-	}
-
+	
+	// --- logging ---
+	
 	/**
 	 * Logs the specified status with this plug-in's log.
 	 * 
@@ -138,6 +134,47 @@ public class MulticoreVisualizerUIPlugin extends AbstractUIPlugin {
 		log(new Status(IStatus.ERROR, getUniqueIdentifier(), IStatus.ERROR, e.getMessage(), e));
 	}
 
+
+	// --- accessors ---
+
+	/**
+	 * Convenience method which returns the unique identifier of this plugin.
+	 */
+	public static String getUniqueIdentifier() {
+		if (getDefault() == null) {
+			// If the default instance is not yet initialized,
+			// return a static identifier. This identifier must
+			// match the plugin id defined in plugin.xml
+			return PLUGIN_ID;
+		}
+		return getDefault().getBundle().getSymbolicName();
+	}
+
+	
+	// --- UI plugin support ---
+	
+    /**
+     * copied from org.eclipse.cdt.launch.internal.ui.LaunchUIPlugin
+     */
+	private static Shell debugDialogShell;
+
+	public static Shell getShell() {
+		if (getActiveWorkbenchShell() != null) {
+			return getActiveWorkbenchShell();
+		}
+		if (debugDialogShell != null) {
+			if (!debugDialogShell.isDisposed())
+				return debugDialogShell;
+			debugDialogShell = null;
+		}
+		IWorkbenchWindow[] windows = getDefault().getWorkbench().getWorkbenchWindows();
+		return windows[0].getShell();
+	}
+
+	public static void setDialogShell(Shell shell) {
+		debugDialogShell = shell;
+	}
+	
 	/**
 	 * Returns the active workbench window
 	 * 
@@ -185,4 +222,52 @@ public class MulticoreVisualizerUIPlugin extends AbstractUIPlugin {
 		}
 	}
 
+	// --- resource management ---
+	
+	/** Returns resource manager for this plugin */
+	public UIResourceManager getPluginResources() {
+		if (s_resources == null) {
+			s_resources = new UIResourceManager(this);
+			s_resources.setParentManager(CDTVisualizerUIPlugin.getResources());
+		}
+		
+		return s_resources;
+	}
+	
+	/** Releases resource manager for this plugin. */
+	public void cleanupPluginResources() {
+		s_resources.dispose();
+	}
+	
+	/** Convenience method for getting plugin resource manager */
+	public static UIResourceManager getResources() {
+		return getDefault().getPluginResources();
+	}
+	
+	/** Convenience method for looking up string resources */
+	public static String getString(String key) {
+		return getDefault().getPluginResources().getString(key);
+	}
+	/** Convenience method for looking up string resources */
+	public static String getString(String key, Object... arguments) {
+		return getDefault().getPluginResources().getString(key, arguments);
+	}
+	
+	/** Convenience method for looking up image resources */
+	public static Image getImage(String key) {
+		return getDefault().getPluginResources().getImage(key);
+	}
+	/** Convenience method for looking up image resources */
+	public static ImageDescriptor getImageDescriptor(String key) {
+		return getDefault().getPluginResources().getImageDescriptor(key);
+	}
+	
+	/** Convenience method for looking up font resources */
+	public static Font getFont(String fontName, int height) {
+		return getDefault().getPluginResources().getFont(fontName, height);
+	}
+	/** Convenience method for looking up font resources */
+	public static Font getFont(String fontName, int height, int style) {
+		return getDefault().getPluginResources().getFont(fontName, height, style);
+	}
 }

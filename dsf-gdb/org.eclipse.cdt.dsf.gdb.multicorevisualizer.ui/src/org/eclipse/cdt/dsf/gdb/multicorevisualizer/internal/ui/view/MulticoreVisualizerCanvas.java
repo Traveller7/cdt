@@ -171,9 +171,12 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 			/** Invoked for a menu mouse down at the specified point. */
 			@Override
 			public void mouseDown(int button, int x, int y, int keys) {
-				// select item(s) under the mouse before popping up the context menu
 				if (button == RIGHT_BUTTON) {
-					MulticoreVisualizerCanvas.this.select(x, y, keys);
+					if (! hasSelection()) {
+						// If there isn't a selection currently, try to
+						// select item(s) under the mouse before popping up the context menu.
+						MulticoreVisualizerCanvas.this.select(x, y, keys);
+					}
 				}
 			}
 
@@ -748,6 +751,20 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 	
 	// --- selection management methods ---
 		
+	/** Selects all items in the canvas. */
+	public void selectAll()
+	{
+		// currently, we select/deselect threads, not processes or tiles
+		if (m_threads != null) {
+
+			for (MulticoreVisualizerThread tobj : m_threads) {
+				tobj.setSelected(true);
+			}
+			
+			selectionChanged();
+		}
+	}
+
 	/** Clears selection. */
 	public void clearSelection() {
 		// currently, we select/deselect threads, not processes or tiles
@@ -822,6 +839,12 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 		m_selectionManager.raiseSelectionChangedEvent();
 	}
 	
+	/** Returns true if we have a selection. */
+	public boolean hasSelection()
+	{
+		return m_selectionManager.hasSelection();
+	}
+	
 	/** Gets current externally-visible selection. */
 	public ISelection getSelection()
 	{
@@ -839,7 +862,7 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 	{
 		m_selectionManager.setSelection(selection, raiseEvent);
 	}
-
+	
     /** Sets whether selection events are enabled. */
     public void setSelectionEventsEnabled(boolean enabled) {
         m_selectionManager.setSelectionEventsEnabled(enabled);

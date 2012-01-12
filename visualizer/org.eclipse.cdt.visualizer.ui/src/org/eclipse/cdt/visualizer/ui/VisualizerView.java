@@ -22,6 +22,8 @@ import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.swt.events.MenuEvent;
+import org.eclipse.swt.events.MenuListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Menu;
@@ -259,8 +261,12 @@ public class VisualizerView
 		// it's a user selection in the viewer, so we want to pass
 		// the selection change on to the workbench
 		if (source == m_viewer) {
+			// tell viewer about workbench selection
 			ISelection selection = event.getSelection();
 			setWorkbenchSelection(selection);
+			
+			// update toolbar/menu to reflect changed selection
+			updateUI();
 		}
 		// if the source is this view, it's an echo of a workbench
 		// event we sent out, so ignore it.
@@ -272,6 +278,9 @@ public class VisualizerView
 		else {
 			ISelection selection = event.getSelection();
 			workbenchSelectionChanged(selection);
+			
+			// update toolbar/menu to reflect changed selection
+			updateUI();
 		}
 	}
 
@@ -391,6 +400,11 @@ public class VisualizerView
 			// Note: showing menu implicitly invokes populateContextMenu()
 			// to populate context menu items.
 			menu.setVisible(true);
+			
+			// Make sure we have the focus now
+			// so we'll still have it when the menu goes away,
+			// and user doesn't have to click twice.
+			setFocus();
 		}
 	}
 	

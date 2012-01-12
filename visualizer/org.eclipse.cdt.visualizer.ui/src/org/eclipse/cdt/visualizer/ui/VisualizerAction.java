@@ -18,6 +18,7 @@ package org.eclipse.cdt.visualizer.ui;
 // SWT/JFace classes
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.swt.widgets.Event;
 
 // Eclipse IDE classes
 
@@ -41,21 +42,49 @@ public class VisualizerAction extends Action
 	// --- constructors/destructors ---
 	
 	/** Constructor. */
+	protected VisualizerAction() {
+		// NOTE: this constructor is only intended for deriving classes
+		// that need to construct the text/description/image attributes
+		// programmatically.
+	}
+	
+	/** Constructor. */
+	public VisualizerAction(String text, String description) {
+		super(text);
+		setDescription(description);
+	}
+	
+	/** Constructor. */
 	public VisualizerAction(String text, String description,
-						ImageDescriptor image) {
+						    ImageDescriptor image) {
 		super(text, image);
 		setDescription(description);
 	}
 	
 	/** Constructor. */
 	public VisualizerAction(String text, String description,
-						ImageDescriptor enabledImage, ImageDescriptor disabledImage) {
+						    ImageDescriptor enabledImage, ImageDescriptor disabledImage) {
 		super(text, enabledImage);
 		setDescription(description);
 		setDisabledImageDescriptor(disabledImage);
 	}
 
+	/** Dispose method. */
+	public void dispose()
+	{
+	}
 	
+
 	// --- methods ---
 
+	/** Invoked when action is triggered. */
+	public void run() {
+	}
+
+	/** Invoked when action is triggered,
+	 *  with the event that caused it.
+	 */
+	public void runWithEvent(Event event) {
+		run();
+	}
 }

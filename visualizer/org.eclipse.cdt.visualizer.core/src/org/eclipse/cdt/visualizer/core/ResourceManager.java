@@ -116,7 +116,7 @@ public class ResourceManager{
 			// NOTE: We have to be careful to pick up the class loader
 			// from the plugin class, otherwise we default to the classloader
 			// of the ResourceManager class, which is the classloader
-			// for the "com.tilera.ide.core" plugin
+			// for the plugin the ResourceManager comes from.
 			ClassLoader classLoader = m_plugin.getClass().getClassLoader();
 			Locale locale = Locale.getDefault();
 			

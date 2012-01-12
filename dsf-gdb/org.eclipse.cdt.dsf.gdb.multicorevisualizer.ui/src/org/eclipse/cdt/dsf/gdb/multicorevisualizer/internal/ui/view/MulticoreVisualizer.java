@@ -22,6 +22,8 @@ import org.eclipse.cdt.dsf.datamodel.IDMContext;
 import org.eclipse.cdt.dsf.debug.service.IProcesses.IThreadDMData;
 import org.eclipse.cdt.dsf.gdb.launching.GDBProcess;
 import org.eclipse.cdt.dsf.gdb.launching.GdbLaunch;
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.actions.RefreshAction;
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.actions.SelectAllAction;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCPU;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCore;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerExecutionState;
@@ -44,9 +46,18 @@ import org.eclipse.cdt.visualizer.ui.util.GUIUtils;
 import org.eclipse.cdt.visualizer.ui.util.SelectionUtils;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.debug.core.ILaunch;
+import org.eclipse.debug.internal.ui.commands.actions.DropToFrameCommandAction;
+import org.eclipse.debug.internal.ui.commands.actions.ResumeCommandAction;
+import org.eclipse.debug.internal.ui.commands.actions.StepIntoCommandAction;
+import org.eclipse.debug.internal.ui.commands.actions.StepOverCommandAction;
+import org.eclipse.debug.internal.ui.commands.actions.StepReturnCommandAction;
+import org.eclipse.debug.internal.ui.commands.actions.SuspendCommandAction;
+import org.eclipse.debug.internal.ui.commands.actions.TerminateCommandAction;
+import org.eclipse.debug.internal.ui.views.launch.LaunchView;
 import org.eclipse.debug.ui.DebugUITools;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.swt.graphics.Point;
@@ -85,13 +96,47 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	protected MulticoreVisualizerEventListener fEventListener;
 	
 
+	// --- UI members ---
+
+	/** Whether actions have been initialized. */
+	boolean m_actionsInitialized = false;
+	
+	/** Toolbar / menu action */
+	Separator m_separatorAction = null;	
+
+	/** Toolbar / menu action */
+	ResumeCommandAction m_resumeAction = null;
+	
+	/** Toolbar / menu action */
+	SuspendCommandAction m_suspendAction = null;
+	
+	/** Toolbar / menu action */
+	TerminateCommandAction m_terminateAction = null;
+	
+	/** Toolbar / menu action */
+	StepReturnCommandAction m_stepReturnAction = null;
+	
+	/** Toolbar / menu action */
+	StepOverCommandAction m_stepOverAction = null;
+	
+	/** Toolbar / menu action */
+	StepIntoCommandAction m_stepIntoAction = null;
+	
+	/** Toolbar / menu action */
+	DropToFrameCommandAction m_dropToFrameAction = null;
+	
+	/** Toolbar / menu action */
+	SelectAllAction m_selectAllAction = null;
+	
+	/** Toolbar / menu action */
+	RefreshAction m_refreshAction = null;
+	
+
 	// --- constructors/destructors ---
 	
 	/** Constructor. */
 	public MulticoreVisualizer()
 	{
-		// initialize menu/toolbar actions
-		createActions();
 	}
 	
 	/** Dispose method. */
@@ -196,11 +241,66 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	/** Creates actions for menus/toolbar. */
 	protected void createActions()
 	{
+		if (m_actionsInitialized) return; // already done
+		
+		LaunchView debugView = DebugViewUtils.getDebugView();
+		
+		m_separatorAction   = new Separator();
+
+		m_resumeAction      = new ResumeCommandAction();
+		if (debugView != null) m_resumeAction.init(debugView);
+		
+		m_suspendAction     = new SuspendCommandAction();
+		if (debugView != null) m_suspendAction.init(debugView);
+		
+		m_terminateAction   = new TerminateCommandAction();
+		if (debugView != null) m_terminateAction.init(debugView);
+
+		
+		m_stepReturnAction  = new StepReturnCommandAction();
+		if (debugView != null) m_stepReturnAction.init(debugView);
+		
+		m_stepOverAction    = new StepOverCommandAction();
+		if (debugView != null) m_stepOverAction.init(debugView);
+
+		m_stepIntoAction    = new StepIntoCommandAction();
+		if (debugView != null) m_stepIntoAction.init(debugView);
+
+		m_dropToFrameAction = new DropToFrameCommandAction();
+		if (debugView != null) m_dropToFrameAction.init(debugView);
+		
+		m_selectAllAction = new SelectAllAction();
+		m_selectAllAction.init(this);
+		
+		m_refreshAction = new RefreshAction();
+		m_refreshAction.init(this);
+		
+		// Note: debug view may not be initialized at startup,
+		// so we'll pretend the actions are not yet updated,
+		// and reinitialize them later.
+		m_actionsInitialized = (debugView != null);
 	}
 	
 	/** Updates actions displayed on menu/toolbars. */
 	protected void updateActions()
 	{
+		if (! m_actionsInitialized) return;
+
+		// TODO: do we need any special enabling code here?
+		// Seems like we can rely on the enabling done by the DebugView itself,
+		// since we've associated these actions with it.
+
+		boolean enabled = hasSelection();
+		
+		m_resumeAction.setEnabled(enabled);
+		m_suspendAction.setEnabled(enabled);
+		m_terminateAction.setEnabled(enabled);
+		
+		m_stepReturnAction.setEnabled(enabled);
+		m_stepOverAction.setEnabled(enabled);
+		m_stepIntoAction.setEnabled(enabled);
+		m_dropToFrameAction.setEnabled(enabled);
+
 	}
 
 	/** Updates actions specific to context menu. */
@@ -210,6 +310,52 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 
 	/** Cleans up actions. */
 	protected void disposeActions() {
+		if (m_resumeAction != null) {
+			m_resumeAction.dispose();
+			m_resumeAction = null;
+		}
+			
+		if (m_suspendAction != null) {
+			m_suspendAction.dispose();
+			m_suspendAction = null;
+		}
+			
+		if (m_terminateAction != null) {
+			m_terminateAction.dispose();
+			m_terminateAction = null;
+		}
+			
+		if (m_stepReturnAction != null) {
+			m_stepReturnAction.dispose();
+			m_stepReturnAction = null;
+		}
+		
+		if (m_stepOverAction != null) {
+			m_stepOverAction.dispose();
+			m_stepOverAction = null;
+		}
+			
+		if (m_stepIntoAction != null) {
+			m_stepIntoAction.dispose();
+			m_stepIntoAction = null;
+		}
+			
+		if (m_dropToFrameAction != null) {
+			m_dropToFrameAction.dispose();
+			m_dropToFrameAction = null;
+		}
+		
+		if (m_selectAllAction != null) {
+			m_selectAllAction.dispose();
+			m_selectAllAction = null;
+		}
+		
+		if (m_refreshAction != null) {
+			m_refreshAction.dispose();
+			m_refreshAction = null;
+		}
+		
+		m_actionsInitialized = false;
 	}
 
 	
@@ -219,6 +365,20 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	@Override
 	public void populateToolBar(IToolBarManager toolBarManager)
 	{
+		// initialize menu/toolbar actions, if needed
+		createActions();
+
+		toolBarManager.add(m_resumeAction);
+		toolBarManager.add(m_suspendAction);
+		toolBarManager.add(m_terminateAction);
+		
+		toolBarManager.add(m_separatorAction);
+		
+		toolBarManager.add(m_stepReturnAction);
+		toolBarManager.add(m_stepOverAction);
+		toolBarManager.add(m_stepIntoAction);
+		toolBarManager.add(m_dropToFrameAction);
+		
 		updateActions();
 	}
 
@@ -226,6 +386,11 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	@Override
 	public void populateMenu(IMenuManager menuManager)
 	{
+		// initialize menu/toolbar actions, if needed
+		createActions();
+
+		// TODO: Anything we want to hide on the toolbar menu?
+		
 		updateActions();
 	}
 
@@ -233,6 +398,25 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	@Override
 	public void populateContextMenu(IMenuManager menuManager)
 	{
+		// initialize menu/toolbar actions, if needed
+		createActions();
+
+		menuManager.add(m_resumeAction);
+		menuManager.add(m_suspendAction);
+		menuManager.add(m_terminateAction);
+		
+		menuManager.add(m_separatorAction);
+		
+		menuManager.add(m_stepReturnAction);
+		menuManager.add(m_stepOverAction);
+		menuManager.add(m_stepIntoAction);
+		menuManager.add(m_dropToFrameAction);
+
+		menuManager.add(m_separatorAction);
+		
+		menuManager.add(m_selectAllAction);
+		menuManager.add(m_refreshAction);
+		
 		updateActions();
 		Point location = m_viewer.getContextMenuLocation();
 		updateContextMenuActions(location);
@@ -285,6 +469,12 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	@Override
 	public void workbenchSelectionChanged(ISelection selection)
 	{
+		refresh();
+	}
+	
+	/** Refreshes visualizer content from model. */
+	public void refresh()
+	{
 		// See if we need to update our debug info from
 		// the workbench selection. This will be done asynchronously.
 		boolean changed = updateDebugContext();
@@ -292,10 +482,10 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 		// Even if debug info doesn't change, we still want to
 		// check whether the canvas selection needs to change
 		// to reflect the current workbench selection.
-		if (! changed) updateCanvasSelection();
+		if (!changed) updateCanvasSelection();
 	}
 	
-	
+
 	// --- ISelectionChangedListener implementation ---
 
 	/**
@@ -496,6 +686,12 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	}
 	
 	
+	/** Selects all thread(s) displayed in the canvas. */
+	public void selectAll()
+	{
+		m_canvas.selectAll();
+	}
+	
 	// --- Visualizer model update methods ---
 	
 	/** Starts visualizer model request.
@@ -656,7 +852,10 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 				DMContexts.getAncestorOfType(execContext, IMIProcessDMContext.class);
 		int pid = Integer.parseInt(processContext.getProcId());
 		int tid = execContext.getThreadId();
-		int osTid = Integer.parseInt(threadData.getId());
+		String osTIDValue = threadData.getId();
+
+		// HACK: if we can't get the real Linux OS tid, use the gdb TID
+		int osTid = (osTIDValue == null) ? tid : Integer.parseInt(osTIDValue);
 
 		model.addThread(new VisualizerThread(core, pid, osTid, tid, state));
 		
