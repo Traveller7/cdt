@@ -97,7 +97,7 @@ public class VisualizerSelectionFinder
 				for (Object o : m_selection) {
 					if (o instanceof VisualizerThread) {
 						VisualizerThread thread = (VisualizerThread) o;
-						if (thread.getPID() == pid && thread.getTID() == tid)
+						if (thread.getPID() == pid && thread.getGDBTID() == tid)
 						{
 							m_result.add(element);
 						}

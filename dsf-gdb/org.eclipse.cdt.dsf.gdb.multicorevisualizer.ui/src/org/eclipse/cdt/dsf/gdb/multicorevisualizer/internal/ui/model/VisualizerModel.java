@@ -177,7 +177,7 @@ public class VisualizerModel
 	public VisualizerThread getThread(int threadId) {
 		VisualizerThread result = null;
 		for (VisualizerThread thread : m_threads) {
-			if (thread.getTID() == threadId) {
+			if (thread.getGDBTID() == threadId) {
 				result = thread;
 				break;
 			}
@@ -203,7 +203,7 @@ public class VisualizerModel
 		Iterator<VisualizerThread> itr = m_threads.iterator();
 		while (itr.hasNext()) {
 			VisualizerThread thread = itr.next();
-			if (thread.getTID() == threadId) {
+			if (thread.getGDBTID() == threadId) {
 				itr.remove();
 				break;
 			}
