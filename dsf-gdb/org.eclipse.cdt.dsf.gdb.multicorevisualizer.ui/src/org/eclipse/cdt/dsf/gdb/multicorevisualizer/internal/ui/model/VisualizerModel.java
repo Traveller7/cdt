@@ -170,7 +170,7 @@ public class VisualizerModel
 	}
 
 	/** 
-	 * Find a thread by threadId.
+	 * Find a thread by GDB threadId.
 	 * Since thread ids are unique across a GDB session,
 	 * we can uniquely find a thread based on its id.
 	 */
@@ -197,7 +197,7 @@ public class VisualizerModel
 	}
 
 	/** 
-	 * Removes thread by threadId.
+	 * Removes thread by GDB threadId.
 	 */
 	public void removeThread(int threadId) {
 		Iterator<VisualizerThread> itr = m_threads.iterator();

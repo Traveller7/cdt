@@ -97,6 +97,7 @@ public class VisualizerSelectionFinder
 				for (Object o : m_selection) {
 					if (o instanceof VisualizerThread) {
 						VisualizerThread thread = (VisualizerThread) o;
+						// The Debug view model uses the GDB thread, to we need to use that one from the Visualizer model
 						if (thread.getPID() == pid && thread.getGDBTID() == tid)
 						{
 							m_result.add(element);
