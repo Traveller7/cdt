@@ -115,6 +115,9 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 	protected ArrayList<MulticoreVisualizerThread> m_threads = null;
 	protected Hashtable<VisualizerThread, MulticoreVisualizerThread> m_threadMap = null;
 	
+	/** Selected PIDs. */
+	protected HashSet<Integer> m_selectedPIDs = null;
+	
 
 	// --- constructors/destructors ---
 	
@@ -153,6 +156,8 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 		
 		m_threads     = new ArrayList<MulticoreVisualizerThread>();
 		m_threadMap   = new Hashtable<VisualizerThread, MulticoreVisualizerThread>();
+		
+		m_selectedPIDs = new HashSet<Integer>();
 		
 		// mouse-drag monitor
 		m_mouseMonitor = new MouseMonitor(this) {
@@ -247,6 +252,10 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
         if (m_threadMap != null) {
         	m_threadMap.clear();
         	m_threadMap = null;
+        }
+        if (m_selectedPIDs != null) {
+        	m_selectedPIDs.clear();
+        	m_selectedPIDs = null;
         }
 	}
 	
@@ -483,7 +492,7 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 					m_threadMap.put(thread, mthread);
 				}
 			}
-			
+
 			// now set sizes of processes/threads for each tile
 			for (MulticoreVisualizerCore core : m_cores) {
 				Rectangle bounds = core.getBounds();
@@ -517,6 +526,18 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 		// restore canvas object highlighting from model object selection
 		restoreSelection();
 
+		// HACK: enable secondary highlight for threads that are
+		// part of a selected process.
+		m_selectedPIDs.clear();
+		for (MulticoreVisualizerThread mthread : m_threads) {
+			if (mthread.isSelected()) {
+				m_selectedPIDs.add(mthread.getPID());
+			}
+		}
+		for (MulticoreVisualizerThread mthread : m_threads) {
+			mthread.setProcessSelected(m_selectedPIDs.contains(mthread.getPID()));
+		}
+		
 		// NOW we can clear the background
 		clearCanvas(gc);
 

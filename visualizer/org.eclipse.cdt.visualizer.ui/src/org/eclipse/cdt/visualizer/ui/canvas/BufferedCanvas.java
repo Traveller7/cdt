@@ -155,6 +155,7 @@ public class BufferedCanvas extends Canvas
         bgc.setBackground(gc.getBackground());
         bgc.setForeground(gc.getForeground());
         bgc.setFont(gc.getFont());
+        bgc.setAlpha(255);
 
         // invoke paintCanvas() method to paint into the buffer
         try {

@@ -40,6 +40,9 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 	/** Visualizer model thread. */
 	protected VisualizerThread m_thread;
 	
+	/** Whether this thread is part of a currently selected process. */
+	protected boolean m_processSelected = true;
+	
 
 	// --- constructors/destructors ---
 	
@@ -85,10 +88,23 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 		return m_thread.getTID();
 	}
 	
+	/** Gets thread state. */
 	public VisualizerExecutionState getState() {
 		return m_thread.getState();
 	}
 
+	/** Sets whether thread's process is selected. */
+	public void setProcessSelected(boolean processSelected)
+	{
+		m_processSelected = processSelected;
+	}
+	
+	/** Gets whether thread's process is selected. */
+	public boolean getProcessSelected()
+	{
+		return m_processSelected;
+	}
+	
 	
 	// --- methods ---
 	
@@ -126,12 +142,21 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 			// draw an alpha-shaded "pixie" light for each thread
 			int step1 = 3;
 			int step2 = 6;
-			gc.setAlpha(128);
+			int alpha1 = 128;
+			int alpha2 = 196;
+			int alpha3 = 255;
+			if (! m_processSelected) {
+				alpha1 -= 64;
+				alpha2 -= 64;
+				alpha3 -= 64;
+			}
+			gc.setAlpha(alpha1);
 			gc.fillOval(x, y, w, h);
-			gc.setAlpha(196);
+			gc.setAlpha(alpha2);
 			gc.fillOval(x+step1, y+step1, w-step1*2, h-step1*2);
-			gc.setAlpha(255);
+			gc.setAlpha(alpha3);
 			gc.fillOval(x+step2, y+step2, w-step2*2, h-step2*2);
+			gc.setAlpha(255);
 
 			// special case: for the "process" thread, draw an enclosing circle
 			if (m_thread.isProcessThread()) {
