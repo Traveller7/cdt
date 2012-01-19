@@ -9,24 +9,18 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// Package declaration
 package org.eclipse.cdt.visualizer.ui.plugin;
 
-// Java classes
-
-// Eclipse/CDT classes
+import org.eclipse.cdt.visualizer.core.plugin.CDTVisualizerCorePlugin;
+import org.eclipse.cdt.visualizer.ui.util.Colors;
+import org.eclipse.cdt.visualizer.ui.util.UIResourceManager;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
-import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.Status;
-
-// Custom classes
-import org.eclipse.cdt.visualizer.core.plugin.CDTVisualizerCorePlugin;
-import org.eclipse.cdt.visualizer.ui.util.Colors;
-import org.eclipse.cdt.visualizer.ui.util.UIResourceManager;
-import org.eclipse.jface.resource.ImageDescriptor;
 
 
 // ----------------------------------------------------------------------------

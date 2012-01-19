@@ -9,10 +9,8 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.visualizer.ui.canvas;
 
-// SWT/JFace classes
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Rectangle;
 

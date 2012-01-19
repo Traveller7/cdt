@@ -9,13 +9,10 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.visualizer.ui.util;
 
-//Java API classes
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
 
 
 // ---------------------------------------------------------------------------

@@ -9,10 +9,8 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.visualizer.ui.util;
 
-// SWT/JFace packages
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
@@ -25,8 +23,8 @@ import org.eclipse.swt.widgets.Display;
 //---------------------------------------------------------------------------
 
 /**
-* Assorted high-level UI utilities.
-*/
+ * Assorted high-level UI utilities.
+ */
 public class GUIUtils {
 	
 	// --- display methods ---

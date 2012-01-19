@@ -9,16 +9,13 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// Package declaration
 package org.eclipse.cdt.visualizer.ui.util;
 
-// Java classes
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-// SWT/JFace classes
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;

@@ -9,16 +9,26 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// Package declaration
 package org.eclipse.cdt.visualizer.ui;
 
-// Java classes
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-//SWT/JFace classes
-import org.eclipse.swt.SWT;        // constants
+import org.eclipse.cdt.visualizer.core.Extension;
+import org.eclipse.cdt.visualizer.ui.events.IVisualizerViewerListener;
+import org.eclipse.cdt.visualizer.ui.events.VisualizerViewerEvent;
+import org.eclipse.cdt.visualizer.ui.plugin.CDTVisualizerUIPlugin;
+import org.eclipse.cdt.visualizer.ui.util.ListenerList;
+import org.eclipse.cdt.visualizer.ui.util.SelectionManager;
+import org.eclipse.cdt.visualizer.ui.util.SelectionUtils;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.ISelectionProvider;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuDetectEvent;
 import org.eclipse.swt.events.MenuDetectListener;
 import org.eclipse.swt.events.PaintEvent;
@@ -28,24 +38,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.jface.action.IMenuManager;
-import org.eclipse.jface.action.IToolBarManager;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.ISelectionProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
-
-// Eclipse/CDT classes
 import org.eclipse.ui.part.PageBook;
-
-// Custom classes
-import org.eclipse.cdt.visualizer.core.Extension;
-import org.eclipse.cdt.visualizer.ui.events.IVisualizerViewerListener;
-import org.eclipse.cdt.visualizer.ui.events.VisualizerViewerEvent;
-import org.eclipse.cdt.visualizer.ui.plugin.CDTVisualizerUIPlugin;
-import org.eclipse.cdt.visualizer.ui.util.ListenerList;
-import org.eclipse.cdt.visualizer.ui.util.SelectionManager;
-import org.eclipse.cdt.visualizer.ui.util.SelectionUtils;
 
 
 // ----------------------------------------------------------------------------

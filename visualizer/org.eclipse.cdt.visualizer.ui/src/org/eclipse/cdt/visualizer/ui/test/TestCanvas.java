@@ -9,19 +9,11 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.visualizer.ui.test;
 
-//Java API classes
-
-// SWT/JFace classes
+import org.eclipse.cdt.visualizer.ui.canvas.GraphicCanvas;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Composite;
-
-// Eclipse/CDT classes
-import org.eclipse.cdt.visualizer.ui.canvas.GraphicCanvas;
-
-// custom classes
 
 
 // ---------------------------------------------------------------------------
@@ -31,7 +23,6 @@ import org.eclipse.cdt.visualizer.ui.canvas.GraphicCanvas;
 /**
  * Default canvas control, used by TestCanvasVisualizer.
  */
-
 public class TestCanvas extends GraphicCanvas
 {
 	// --- members ---

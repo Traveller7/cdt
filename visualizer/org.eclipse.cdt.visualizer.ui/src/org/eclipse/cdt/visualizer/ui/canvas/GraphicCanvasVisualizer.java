@@ -9,12 +9,8 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.visualizer.ui.canvas;
 
-//Java API classes
-
-// SWT classes
 import org.eclipse.cdt.visualizer.ui.Visualizer;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;

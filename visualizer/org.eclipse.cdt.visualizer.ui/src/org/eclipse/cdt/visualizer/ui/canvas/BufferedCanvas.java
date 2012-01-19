@@ -9,16 +9,19 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.visualizer.ui.canvas;
 
-// SWT classes
-import org.eclipse.swt.SWT;         // constants
-import org.eclipse.swt.graphics.*;  // 2D graphics
-import org.eclipse.swt.widgets.*;   // UI controls
-import org.eclipse.swt.events.*;    // UI events
-
-// custom classes
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ControlEvent;
+import org.eclipse.swt.events.ControlListener;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 
 
 // ---------------------------------------------------------------------------

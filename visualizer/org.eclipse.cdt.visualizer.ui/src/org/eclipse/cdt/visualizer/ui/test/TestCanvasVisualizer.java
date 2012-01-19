@@ -9,22 +9,15 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.visualizer.ui.test;
 
-//Java API classes
-
-// SWT/JFace classes
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 
-// Eclipse/CDT classes
 import org.eclipse.cdt.visualizer.ui.canvas.GraphicCanvas;
 import org.eclipse.cdt.visualizer.ui.canvas.GraphicCanvasVisualizer;
 import org.eclipse.cdt.visualizer.ui.util.SelectionUtils;
 import org.eclipse.jface.viewers.ISelection;
-
-// custom classes
 
 
 // ---------------------------------------------------------------------------
@@ -32,7 +25,7 @@ import org.eclipse.jface.viewers.ISelection;
 // ---------------------------------------------------------------------------
 
 /**
- * Default visualizer, used only for testing genericity of framework.
+ * Default visualizer, used only for testing framework.
  * 
  * This view uses the CDT Visualizer framework.
  */

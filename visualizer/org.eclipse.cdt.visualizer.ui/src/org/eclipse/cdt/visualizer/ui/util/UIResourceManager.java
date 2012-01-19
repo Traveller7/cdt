@@ -9,13 +9,11 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.visualizer.ui.util;
 
-// Java API classes
 import java.net.URL;
 
-// Eclipse classes
+import org.eclipse.cdt.visualizer.core.ResourceManager;
 import org.eclipse.jface.resource.ColorRegistry;
 import org.eclipse.jface.resource.FontRegistry;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -28,9 +26,6 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
-
-// custom classes
-import org.eclipse.cdt.visualizer.core.ResourceManager;
 
 
 // ---------------------------------------------------------------------------
