@@ -84,7 +84,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	/**
 	 * The data model drawn by this visualizer.
 	 */
-	private VisualizerModel fDataModel;
+	protected VisualizerModel fDataModel;
 
 	/** Downcast reference to canvas. */
 	protected MulticoreVisualizerCanvas m_canvas;
@@ -513,8 +513,8 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	/** Gets debug view selection from visualizer selection. */
 	protected ISelection visualizerToDebugViewSelection(ISelection visualizerSelection)
 	{
-		VisualizerSelectionFinder selectionFinder =
-			new VisualizerSelectionFinder();
+		MulticoreVisualizerSelectionFinder selectionFinder =
+			new MulticoreVisualizerSelectionFinder();
 		ISelection workbenchSelection =
 			selectionFinder.findSelection(visualizerSelection);
 		return workbenchSelection;

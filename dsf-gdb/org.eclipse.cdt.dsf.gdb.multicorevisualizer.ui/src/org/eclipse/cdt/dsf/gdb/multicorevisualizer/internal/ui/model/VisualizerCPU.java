@@ -59,6 +59,15 @@ public class VisualizerCPU
 	}
 	
 	
+	// --- Object methods ---
+	
+	/** Returns string representation. */
+	@Override
+	public String toString() {
+		return "CPU:" + m_id; //$NON-NLS-1$
+	}
+	
+	
 	// --- accessors ---
 	
 	/** Gets ID of this CPU. */
@@ -120,8 +129,4 @@ public class VisualizerCPU
 		return result;
 	}
 	
-	@Override
-	public String toString() {
-		return "CPU:" + m_id; //$NON-NLS-1$
-	}
 }

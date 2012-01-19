@@ -15,7 +15,6 @@ import org.eclipse.cdt.visualizer.ui.util.Colors;
 import org.eclipse.swt.graphics.Color;
 
 
-
 /**
  * Constants to be used in the Multicore Visualizer.
  */

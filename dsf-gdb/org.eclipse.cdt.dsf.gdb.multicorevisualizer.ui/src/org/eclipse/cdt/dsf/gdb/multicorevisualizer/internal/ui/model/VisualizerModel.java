@@ -17,6 +17,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 
+import org.eclipse.cdt.visualizer.ui.util.Todo;
+
 /** 
  * Class representing the state of the data to display in the MulticoreVisualizer. 
  */

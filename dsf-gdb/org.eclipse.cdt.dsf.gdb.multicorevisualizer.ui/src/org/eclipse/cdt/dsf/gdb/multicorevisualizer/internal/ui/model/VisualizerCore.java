@@ -37,6 +37,15 @@ public class VisualizerCore
 	}
 	
 	
+	// --- Object methods ---
+	
+	/** Returns string representation. */
+	@Override
+	public String toString() {
+		return m_cpu + ",Core:" + m_id; //$NON-NLS-1$
+	}
+
+	
 	// --- accessors ---
 	
 	/** Gets CPU this core is part of. */
@@ -70,8 +79,4 @@ public class VisualizerCore
 		return result;
 	}
 	
-	@Override
-	public String toString() {
-		return m_cpu + ",Core:" + m_id; //$NON-NLS-1$
-	}
 }

@@ -102,7 +102,7 @@ public class MulticoreVisualizerCore extends MulticoreVisualizerGraphicObject
 	 * If no thread is CRASHED and any thread is SUSPENDED, the core is SUSPENDED.
 	 * If no thread is CRASHED and no thread is SUSPENDED, the core is RUNNING.
 	 */
-	private VisualizerExecutionState getCoreState() {
+	protected VisualizerExecutionState getCoreState() {
 		VisualizerExecutionState state = VisualizerExecutionState.RUNNING;
 		
 		for (MulticoreVisualizerThread thread : m_threads) {
@@ -124,7 +124,8 @@ public class MulticoreVisualizerCore extends MulticoreVisualizerGraphicObject
 		return state;
 	}
 	
-	private Color getCoreStateColor(boolean foreground) {
+	/** Returns core color for current state. */
+	protected Color getCoreStateColor(boolean foreground) {
 		VisualizerExecutionState state = getCoreState();
 		
 		switch (state) {

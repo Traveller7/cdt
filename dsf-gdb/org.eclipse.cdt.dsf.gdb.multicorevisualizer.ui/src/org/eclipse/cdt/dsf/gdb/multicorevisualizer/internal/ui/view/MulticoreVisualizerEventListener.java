@@ -11,7 +11,6 @@
 
 package org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.view;
 
-
 import org.eclipse.cdt.dsf.concurrent.ImmediateDataRequestMonitor;
 import org.eclipse.cdt.dsf.datamodel.DMContexts;
 import org.eclipse.cdt.dsf.datamodel.IDMContext;
@@ -37,19 +36,31 @@ import org.eclipse.cdt.dsf.mi.service.command.events.MISignalEvent;
 import org.eclipse.cdt.dsf.service.DsfServiceEventHandler;
 import org.eclipse.cdt.dsf.service.DsfServicesTracker;
 
+
 /**
  * DSF event listener class for the Multicore Visualizer.
  * This class will handle different relevant DSF events
  * and update the Multicore Visualizer accordingly.
  */
-public class MulticoreVisualizerEventListener {	
-
-	private MulticoreVisualizer fVisualizer;
+public class MulticoreVisualizerEventListener {
 	
+	// --- members ---
+
+	/** Visualizer we're managing events for. */
+	protected MulticoreVisualizer fVisualizer;
+
+	
+	// --- constructors/destructors ---
+	
+	/** Constructor */
 	public MulticoreVisualizerEventListener(MulticoreVisualizer visualizer) {
 		fVisualizer = visualizer;
 	}
 
+	
+	// --- event handlers ---
+	
+	/** Invoked when a thread or process is suspended. */
 	@DsfServiceEventHandler
 	public void handleEvent(ISuspendedDMEvent event) {
 		IDMContext context = event.getDMContext();
@@ -79,13 +90,13 @@ public class MulticoreVisualizerEventListener {
     				}
     			}
 
-
     			thread.setState(newState);
     			fVisualizer.getMulticoreVisualizerCanvas().requestUpdate();
     		}
     	}
 	}
 
+	/** Invoked when a thread or process is resumed. */
 	@DsfServiceEventHandler
 	public void handleEvent(IResumedDMEvent event) {
 		IDMContext context = event.getDMContext();

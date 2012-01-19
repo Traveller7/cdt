@@ -81,12 +81,6 @@ public class DSFSessionState
 	
 	// --- listener management ---
 
-	// <soapbox>
-	// Good god. Who decided it was okay to use _annotations_ to define
-	// the callback methods on a listener instance, for crying out loud?
-	// Isn't this, like, the _definitive_ use case for interfaces?
-	// </soapbox>
-
 	/** Adds a service event listener. */
 	public void addServiceEventListener(Object listener)
 	{

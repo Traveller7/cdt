@@ -19,7 +19,20 @@ import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICPUDMContext;
 import org.eclipse.cdt.dsf.gdb.service.IGDBHardware.ICoreDMContext;
 import org.eclipse.cdt.dsf.mi.service.IMIExecutionDMContext;
 
-/** Interface for classes that interact with DSFDebugModel. */
+/** Interface for classes that interact with DSFDebugModel.
+ * 
+ *  An instance of this interface is passed as
+ *  an argument to a method of DSFDebugModel, and
+ *  the corresponding callback on this interface is
+ *  invoked when the method completes.
+ *  
+ *  The "arg" argument is the value (if any) passed
+ *  through the corresponding "arg" argument of the
+ *  DSFDebugModel method.
+ *  
+ *  TODO: we intend to refactor this API and make this
+ *  a base class rather than an instance.
+ */
 public interface DSFDebugModelListener {
 	
 	/** Invoked when getCPUs() request completes. */

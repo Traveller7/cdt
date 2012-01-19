@@ -34,7 +34,7 @@ import org.eclipse.jface.viewers.TreePath;
 * based on selection obtained from the multicore visualizer.
 */
 @SuppressWarnings("restriction") // allow access to internal interfaces
-public class VisualizerSelectionFinder
+public class MulticoreVisualizerSelectionFinder
 	extends DebugViewTreeWalker
 {
 	// --- members ---
@@ -49,7 +49,7 @@ public class VisualizerSelectionFinder
 	// --- constructors/destructors ---
 
 	/** Constructor */
-	public VisualizerSelectionFinder()
+	public MulticoreVisualizerSelectionFinder()
 	{
 	}
 

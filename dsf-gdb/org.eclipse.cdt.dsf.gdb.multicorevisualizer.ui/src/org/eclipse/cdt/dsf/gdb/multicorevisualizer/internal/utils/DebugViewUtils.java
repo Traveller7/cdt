@@ -21,10 +21,13 @@ import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
+
 /** Assorted utilities for interacting with the Debug View (aka LaunchView). */
 @SuppressWarnings("restriction") // allow access to internal classes
 public class DebugViewUtils
 {
+	// --- static utility methods ---
+	
     /**
      * Returns Debug View (a.k.a. LaunchView).
      */

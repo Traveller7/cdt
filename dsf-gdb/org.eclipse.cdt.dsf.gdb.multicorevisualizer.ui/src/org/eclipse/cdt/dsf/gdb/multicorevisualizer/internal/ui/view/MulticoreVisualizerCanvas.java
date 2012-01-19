@@ -105,14 +105,17 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 	
 	/** List of CPUs we're displaying. */
 	protected ArrayList<MulticoreVisualizerCPU> m_cpus = null;
+	/** Mapping from model to view objects. */
 	protected Hashtable<VisualizerCPU, MulticoreVisualizerCPU> m_cpuMap = null;
 
 	/** List of CPU cores we're displaying. */
 	protected ArrayList<MulticoreVisualizerCore> m_cores = null;
+	/** Mapping from model to view objects. */
 	protected Hashtable<VisualizerCore, MulticoreVisualizerCore> m_coreMap = null;
 	
 	/** Graphic objects representing threads */
 	protected ArrayList<MulticoreVisualizerThread> m_threads = null;
+	/** Mapping from model to view objects. */
 	protected Hashtable<VisualizerThread, MulticoreVisualizerThread> m_threadMap = null;
 	
 	/** Selected PIDs. */

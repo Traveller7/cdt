@@ -158,6 +158,9 @@ public class MulticoreVisualizerUIPlugin extends AbstractUIPlugin
      */
 	private static Shell debugDialogShell;
 
+	/**
+	 * Returns shell (workbench or dialog) for this plugin.
+	 */
 	public static Shell getShell() {
 		if (getActiveWorkbenchShell() != null) {
 			return getActiveWorkbenchShell();
@@ -205,6 +208,9 @@ public class MulticoreVisualizerUIPlugin extends AbstractUIPlugin
 		return null;
 	}
 
+	/**
+	 * Displays an error dialog.
+	 */
 	public static void errorDialog(String message, IStatus status) {
 		log(status);
 		Shell shell = getActiveWorkbenchShell();
@@ -213,6 +219,9 @@ public class MulticoreVisualizerUIPlugin extends AbstractUIPlugin
 		}
 	}
 
+	/**
+	 * Displays an error dialog.
+	 */
 	public static void errorDialog(String message, Throwable t) {
 		log(t);
 		Shell shell = getActiveWorkbenchShell();

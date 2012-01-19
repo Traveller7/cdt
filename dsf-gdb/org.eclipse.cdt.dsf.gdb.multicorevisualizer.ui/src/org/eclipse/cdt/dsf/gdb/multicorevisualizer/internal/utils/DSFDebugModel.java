@@ -38,8 +38,20 @@ import org.eclipse.cdt.dsf.gdb.service.IGDBProcesses.IGdbThreadDMData;
 import org.eclipse.cdt.dsf.mi.service.IMIExecutionDMContext;
 
 
-/** Debugger state information accessors. */
+/** Debugger state information accessors.
+ * 
+ *  NOTE: The methods on this class perform asynchronous operations,
+ *  and call back to a method on a provided DSFDebugModelListener instance
+ *  when the operation is completed.
+ *  
+ *  The "arg" argument to each method can be used by the caller to
+ *  pass through information (partial state, etc.) that will be needed
+ *  by the callback method. This argument is ignored by the methods
+ *  on this class, and is allowed to be null.
+ */
 public class DSFDebugModel {
+	
+	// --- static methods ---
 	
 	/** Requests list of CPUs.
 	 *  Calls back to getCPUsDone() on listener. */

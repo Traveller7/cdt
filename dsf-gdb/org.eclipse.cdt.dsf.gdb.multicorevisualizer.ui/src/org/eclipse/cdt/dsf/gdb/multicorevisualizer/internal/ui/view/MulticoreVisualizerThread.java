@@ -108,7 +108,8 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 	
 	// --- methods ---
 	
-	private Color getThreadStateColor() {
+	/** Gets thread color based on current state. */
+	protected Color getThreadStateColor() {
 		switch (m_thread.getState()) {
 		case RUNNING:
 			return IMulticoreVisualizerConstants.COLOR_RUNNING_THREAD;
@@ -160,7 +161,7 @@ public class MulticoreVisualizerThread extends MulticoreVisualizerGraphicObject
 
 			// special case: for the "process" thread, draw an enclosing circle
 			if (m_thread.isProcessThread()) {
-				// Substract one from the width and height
+				// Subtract one from the width and height
 				// in the case of drawOval because that method
 				// adds a pixel to each value for some reason
 				gc.setForeground(IMulticoreVisualizerConstants.COLOR_PROCESS_THREAD);
