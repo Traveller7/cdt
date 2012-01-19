@@ -9,16 +9,13 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.visualizer.core;
 
-// Java classes
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
-// Eclipse classes
 import org.eclipse.core.runtime.Plugin;
 
 

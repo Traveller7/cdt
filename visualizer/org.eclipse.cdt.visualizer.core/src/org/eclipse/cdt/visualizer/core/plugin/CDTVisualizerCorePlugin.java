@@ -9,19 +9,13 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// Package declaration
 package org.eclipse.cdt.visualizer.core.plugin;
 
-// Java classes
-
-// Eclipse/CDT classes
-import org.eclipse.ui.plugin.AbstractUIPlugin;
-import org.osgi.framework.BundleContext;
+import org.eclipse.cdt.visualizer.core.ResourceManager;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Status;
-
-// Custom classes
-import org.eclipse.cdt.visualizer.core.ResourceManager;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.osgi.framework.BundleContext;
 
 
 // ----------------------------------------------------------------------------
@@ -57,9 +51,7 @@ public class CDTVisualizerCorePlugin extends AbstractUIPlugin
 
 	// --- constructors/destructors ---
 	
-	/**
-	 * Constructor
-	 */
+	/** Constructor */
 	public CDTVisualizerCorePlugin() {
 	}
 

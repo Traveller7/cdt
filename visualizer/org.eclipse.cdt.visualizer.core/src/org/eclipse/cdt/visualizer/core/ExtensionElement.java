@@ -9,10 +9,8 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.visualizer.core;
 
-//Java API classes
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -20,7 +18,6 @@ import java.util.List;
 
 import javax.lang.model.type.NullType;
 
-// Eclipse classes
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IContributor;
@@ -35,6 +32,8 @@ import org.osgi.framework.Bundle;
 /** Facade/utility class for dealing with Eclipse extensions. */
 public class ExtensionElement {
 	
+	// --- static methods ---
+	
 	/** Wraps list of raw extension declarations. */
 	public static List<ExtensionElement> wrapExtensionElements(IConfigurationElement[] elements)
 	{
@@ -45,11 +44,13 @@ public class ExtensionElement {
 		}
 		return result;
 	}
+
 	
    	// --- members ---
 	
 	/** Actual extension description loaded from extension point. */
 	protected IConfigurationElement m_element = null;
+	
 	
 	// --- constructors/destructors ---
 	
@@ -57,6 +58,7 @@ public class ExtensionElement {
 	public ExtensionElement(IConfigurationElement element) {
 		m_element = element;
 	}
+	
 	
 	// --- methods ---
 	

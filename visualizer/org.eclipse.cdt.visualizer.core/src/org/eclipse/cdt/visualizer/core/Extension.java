@@ -9,14 +9,11 @@
  *     William R. Swanson (Tilera Corporation)
  *******************************************************************************/
 
-// package declaration
 package org.eclipse.cdt.visualizer.core;
 
-//Java API classes
 import java.util.ArrayList;
 import java.util.List;
 
-// Eclipse classes
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IExtensionPoint;
 import org.eclipse.core.runtime.Platform;
