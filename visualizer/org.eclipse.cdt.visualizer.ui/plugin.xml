@@ -14,7 +14,7 @@
       <view
             category="org.eclipse.debug.ui"
             class="org.eclipse.cdt.visualizer.ui.VisualizerView"
-            icon="icons/full/view16/visualizer_view.gif"
+            icon="icons/full/view16/visualizer_view.png"
             id="org.eclipse.cdt.visualizer.view"
             name="%view.visualizer.name">
       </view>
