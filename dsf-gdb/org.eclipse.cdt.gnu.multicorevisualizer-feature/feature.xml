@@ -18,7 +18,7 @@
    </license>
 
    <plugin
-         id="org.eclipse.cdt.multicorevisualizer.ui"
+         id="org.eclipse.cdt.dsf.gdb.multicorevisualizer.ui"
          download-size="0"
          install-size="0"
          version="0.0.0"
