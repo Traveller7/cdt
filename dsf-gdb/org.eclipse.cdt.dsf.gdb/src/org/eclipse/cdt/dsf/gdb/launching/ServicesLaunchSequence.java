@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2010 Wind River Systems and others.
+ * Copyright (c) 2006, 2012 Wind River Systems and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,7 @@
  *     Nokia 			  - created GDBBackend service. Sep. 2008
  *     IBM Corporation 
  *     Ericsson           - Support for Tracing Control service
+ *     Marc Khouzam (Ericsson) - Start IGDBHardware service for the multicore visualizer (Bug 335027)
  *******************************************************************************/
 package org.eclipse.cdt.dsf.gdb.launching;
 

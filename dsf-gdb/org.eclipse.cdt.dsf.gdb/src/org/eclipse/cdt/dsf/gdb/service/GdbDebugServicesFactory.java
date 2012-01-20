@@ -10,6 +10,7 @@
  *     Nokia - create and use backend service. 
  *     Onur Akdemir (TUBITAK BILGEM-ITI) - Multi-process debugging (Bug 237306)
  *     Marc Khouzam (Ericsson) - Support for GDB 7.4 (Bug 367788)
+ *     Marc Khouzam (Ericsson) - Include IGDBHardware service for the multicore visualizer (Bug 335027)
  *******************************************************************************/
 package org.eclipse.cdt.dsf.gdb.service;
 
