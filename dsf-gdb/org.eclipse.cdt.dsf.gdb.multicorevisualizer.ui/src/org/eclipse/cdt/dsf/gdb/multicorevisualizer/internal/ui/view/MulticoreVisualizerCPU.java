@@ -99,8 +99,6 @@ public class MulticoreVisualizerCPU extends MulticoreVisualizerGraphicObject
 		return true;
 	}
 	
-	// RESOURCES: need to decide where to get Fonts from.
-	
 	/** Invoked to allow element to paint decorations on top of anything drawn on it */
 	@Override
 	public void paintDecorations(GC gc) {

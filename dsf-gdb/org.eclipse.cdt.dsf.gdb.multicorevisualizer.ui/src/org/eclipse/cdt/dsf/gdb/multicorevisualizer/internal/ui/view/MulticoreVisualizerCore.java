@@ -146,8 +146,6 @@ public class MulticoreVisualizerCore extends MulticoreVisualizerGraphicObject
 	
 	// --- paint methods ---
 	
-	// RESOURCES: need to decide where to get Fonts from.
-	
 	/** Invoked to allow element to paint itself on the viewer canvas */
 	@Override
 	public void paintContent(GC gc) {

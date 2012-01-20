@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 
+import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.MulticoreVisualizerUIPlugin;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCPU;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerCore;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.model.VisualizerModel;
@@ -143,8 +144,6 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 	/** Initializes control */
 	protected void initMulticoreVisualizerCanvas(Composite parent) {
 		// perform any initialization here
-		
-		// RESOURCES: need to decide where to get Fonts from.
 		
 		// text font
 		m_textFont = CDTVisualizerUIPlugin.getResources().getFont("Luxi Sans", 8); //$NON-NLS-1$
@@ -544,9 +543,8 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 		// NOW we can clear the background
 		clearCanvas(gc);
 
-		// RESOURCES: need to decide where to get Colors from.
-		// For now we grab them from Visualizer plugin, so make sure resources are initialized.
-		CDTVisualizerUIPlugin.getResources();
+		// Make sure color/font resources are properly initialized.
+		MulticoreVisualizerUIPlugin.getResources();
 		
 		// paint cpus
 		for (MulticoreVisualizerCPU cpu : m_cpus) {
