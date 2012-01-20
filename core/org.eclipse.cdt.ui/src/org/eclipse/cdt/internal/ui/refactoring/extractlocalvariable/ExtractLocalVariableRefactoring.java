@@ -133,10 +133,8 @@ public class ExtractLocalVariableRefactoring extends CRefactoring {
 				if (isProgressMonitorCanceld(sm, initStatus))
 					return initStatus;
 
-				container.findAllNames();
 				sm.worked(1);
 
-				container.getAllAfterUsedNames();
 				info.addNamesToUsedNames(findAllDeclaredNames());
 				sm.worked(1);
 

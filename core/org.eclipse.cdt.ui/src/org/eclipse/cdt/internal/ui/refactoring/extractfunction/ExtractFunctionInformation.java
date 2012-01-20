@@ -11,7 +11,6 @@
  *******************************************************************************/
 package org.eclipse.cdt.internal.ui.refactoring.extractfunction;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.cdt.core.dom.ast.cpp.ICPPASTFunctionDeclarator;
@@ -24,9 +23,8 @@ public class ExtractFunctionInformation {
 	private VisibilityEnum visibility = VisibilityEnum.v_private;
 	private String methodName;
 	private boolean replaceDuplicates;
-	private List<NameInformation> allAfterUsedNames;
-	private List<NameInformation> allUsedNames;
-	private NameInformation inScopeDeclaredVariable; 
+	private List<NameInformation> parameterCandidates;
+	private NameInformation mandatoryReturnVariable; 
 	private NameInformation returnVariable;
 	private ICPPASTFunctionDeclarator declarator;
 	private MethodContext context;
@@ -62,23 +60,6 @@ public class ExtractFunctionInformation {
 		this.replaceDuplicates = replaceDuplicates;
 	}
 
-	public List<NameInformation> getAllAfterUsedNames() {
-		if (allAfterUsedNames == null) {
-			allAfterUsedNames = new ArrayList<NameInformation>();
-			for (NameInformation name : getAllUsedNames()) {
-				if (name.isReference()||name.isReturnValue()) {
-					allAfterUsedNames.add(name);
-				}
-			}
-		}
-		
-		return allAfterUsedNames;
-	}
-
-	public void setAllAfterUsedNames(ArrayList<NameInformation> allAfterUsedNames) {
-		this.allAfterUsedNames = allAfterUsedNames;
-	}
-
 	public NameInformation getReturnVariable() {
 		return returnVariable;
 	}
@@ -90,20 +71,21 @@ public class ExtractFunctionInformation {
 		this.returnVariable = returnVariable;
 	}
 
-	public NameInformation getInScopeDeclaredVariable() {
-		return inScopeDeclaredVariable;
+	public NameInformation getMandatoryReturnVariable() {
+		return mandatoryReturnVariable;
 	}
 
-	public void setInScopeDeclaredVariable(NameInformation inScopeDeclaredVariable) {
-		this.inScopeDeclaredVariable = inScopeDeclaredVariable;
+	public void setMandatoryReturnVariable(NameInformation variable) {
+		this.mandatoryReturnVariable = variable;
+		this.returnVariable = variable;
 	}
 
-	public List<NameInformation> getAllUsedNames() {
-		return allUsedNames;
+	public List<NameInformation> getParameterCandidates() {
+		return parameterCandidates;
 	}
 
-	public void setAllUsedNames(List<NameInformation> allUsedNames) {
-		this.allUsedNames = allUsedNames;
+	public void setParameterCandidates(List<NameInformation> names) {
+		this.parameterCandidates = names;
 	}
 
 	public VisibilityEnum getVisibility() {
