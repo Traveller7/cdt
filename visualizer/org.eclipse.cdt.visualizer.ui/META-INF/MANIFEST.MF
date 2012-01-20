@@ -4,7 +4,7 @@ Bundle-Name: %plugin.name
 Bundle-SymbolicName: org.eclipse.cdt.visualizer.ui;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: org.eclipse.cdt.visualizer.ui.plugin.CDTVisualizerUIPlugin
-Bundle-Vendor: %plugin.provider
+Bundle-Vendor: %provider.name
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.cdt.visualizer.core,
