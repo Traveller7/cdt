@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011 Tilera Corporation and others.
+ * Copyright (c) 2012 Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -640,7 +640,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 			setCanvasModel(null);
 			return;
 		}
-		m_sessionState.execute(new DsfRunnable() { public void run() {
+		m_sessionState.execute(new DsfRunnable() { @Override public void run() {
 			// get model asynchronously, and update canvas
 			// in getVisualizerModelDone().
 			getVisualizerModel();
@@ -650,7 +650,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	/** Sets canvas model. (Also updates canvas selection.) */
 	protected void setCanvasModel(VisualizerModel model) {
 		final VisualizerModel model_f = model;
-		GUIUtils.exec(new Runnable() { public void run() {
+		GUIUtils.exec(new Runnable() { @Override public void run() {
 			m_canvas.setModel(model_f);
 			
 			// Update the canvas's selection from the current workbench selection.
@@ -660,7 +660,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	
 	/** Updates canvas selection from current workbench selection. */
 	protected void updateCanvasSelection() {
-		GUIUtils.exec(new Runnable() { public void run() {
+		GUIUtils.exec(new Runnable() { @Override public void run() {
 			// Update the canvas's selection from the current workbench selection.
 			updateCanvasSelectionInternal();
 		}});
@@ -714,6 +714,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	// --- DSFDebugModelListener implementation ---
 
 	/** Invoked when DSFDebugModel.getCPUs() completes. */
+	@Override
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public void getCPUsDone(ICPUDMContext[] cpuContexts, Object arg)
 	{
@@ -748,6 +749,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 
 	
 	/** Invoked when getCores() request completes. */
+	@Override
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public void getCoresDone(ICPUDMContext cpuContext,
 							 ICoreDMContext[] coreContexts,
@@ -782,6 +784,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 
 	
 	/** Invoked when getThreads() request completes. */
+	@Override
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public void getThreadsDone(ICPUDMContext  cpuContext,
 							   ICoreDMContext coreContext,
@@ -815,6 +818,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 	}
 	
 	/** Invoked when getThreads() request completes. */
+	@Override
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public void getThreadDataDone(ICPUDMContext cpuContext,
 			                      ICoreDMContext coreContext,
@@ -829,6 +833,7 @@ public class MulticoreVisualizer extends GraphicCanvasVisualizer
 
 	
 	/** Invoked when getThreadExecutionState() request completes. */
+	@Override
 	@ConfinedToDsfExecutor("getSession().getExecutor()")
 	public void getThreadExecutionStateDone(ICPUDMContext cpuContext,
 			                                ICoreDMContext coreContext,

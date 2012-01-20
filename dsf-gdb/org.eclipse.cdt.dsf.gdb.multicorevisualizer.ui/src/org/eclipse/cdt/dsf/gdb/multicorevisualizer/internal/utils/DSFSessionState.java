@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011 Tilera Corporation and others.
+ * Copyright (c) 2012 Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -20,14 +20,12 @@ import org.eclipse.cdt.dsf.concurrent.DsfRunnable;
 import org.eclipse.cdt.dsf.gdb.multicorevisualizer.internal.ui.MulticoreVisualizerUIPlugin;
 import org.eclipse.cdt.dsf.service.DsfServicesTracker;
 import org.eclipse.cdt.dsf.service.DsfSession;
-import org.eclipse.cdt.dsf.ui.viewmodel.datamodel.IDMVMContext;
 
 /**
  * DSF session state object.
  * 
  * Encapsulates and manages DsfSession we're currently tracking.
  */
-@SuppressWarnings("restriction")
 public class DSFSessionState
 {
 	// --- members ---
@@ -42,12 +40,7 @@ public class DSFSessionState
 	protected DsfServicesTracker m_servicesTracker;
 
 	// --- constructors/destructors ---
-	
-	/** Constructor. */
-	public DSFSessionState(IDMVMContext vmContext) {
-		this(vmContext.getDMContext().getSessionId());
-	}
-	
+		
 	public DSFSessionState(String sessionId) {
 		m_sessionId = sessionId;
 		m_sessionListeners = new ArrayList<Object>();
@@ -89,6 +82,7 @@ public class DSFSessionState
 		if (session_f != null) {
 			try {
 				session_f.getExecutor().execute(new DsfRunnable() {
+					@Override
 					public void run() {
 						session_f.addServiceEventListener(listener_f, null);
 						m_sessionListeners.add(listener_f);
@@ -108,6 +102,7 @@ public class DSFSessionState
 		if (session_f != null) {
 			try {
 				session_f.getExecutor().execute(new DsfRunnable() {
+					@Override
 					public void run() {
 						if (m_sessionListeners != null) {
 							session_f.removeServiceEventListener(listener_f);
@@ -128,6 +123,7 @@ public class DSFSessionState
 		if (session_f != null) {
 			try {
 				session_f.getExecutor().execute(new DsfRunnable() {
+					@Override
 					public void run() {
 						if (m_sessionListeners != null) {
 							for (Object listener : m_sessionListeners) {

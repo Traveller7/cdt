@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011 Tilera Corporation and others.
+ * Copyright (c) 2012 Tilera Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -298,7 +298,7 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 	 * multiple update requests on same tick are batched.
 	 */
 	public void requestUpdate() {
-		GUIUtils.exec(new Runnable() { public void run() {
+		GUIUtils.exec(new Runnable() { @Override public void run() {
 			m_updateTimer.start();
 		}});
 	}
@@ -847,11 +847,13 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 	// Delegate to selection manager.
 	
 	/** Adds external listener for selection change events. */
+	@Override
 	public void addSelectionChangedListener(ISelectionChangedListener listener) {
 		m_selectionManager.addSelectionChangedListener(listener);
 	}
 
 	/** Removes external listener for selection change events. */
+	@Override
 	public void removeSelectionChangedListener(ISelectionChangedListener listener) {
 		m_selectionManager.removeSelectionChangedListener(listener);
 	}
@@ -868,12 +870,14 @@ public class MulticoreVisualizerCanvas extends GraphicCanvas
 	}
 	
 	/** Gets current externally-visible selection. */
+	@Override
 	public ISelection getSelection()
 	{
 		return m_selectionManager.getSelection();
 	}
 	
 	/** Sets externally-visible selection. */
+	@Override
 	public void setSelection(ISelection selection)
 	{
 		m_selectionManager.setSelection(selection);
